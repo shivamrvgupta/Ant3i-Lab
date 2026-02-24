@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(lsof -ti :2326)",
+      "Bash(npm install morgan winston)"
     ]
   }
 }
