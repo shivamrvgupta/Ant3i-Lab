@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Diesel Test Report Generator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="app-bg">
+
+<div class="container-xxl py-4">
+  <div class="row g-3 justify-content-center">
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm border-1 rounded-4">
+        <div class="card-body">
+
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h1 class="h5 mb-0">Report Input</h1>
+            <span class="badge bg-secondary text-monospace">Next: <%= nextReportNo %></span>
+          </div>
+
+          <form method="POST" action="/report">
+
+            <!-- Basic Details -->
+            <div class="section-label mt-3">Basic Details</div>
+
+            <label class="form-label small text-muted mt-2">Customer</label>
+            <input class="form-control" name="customer" value="M/s. Your Company Name" />
+
+            <div class="row g-2 mt-1">
+              <div class="col-6">
+                <label class="form-label small text-muted">Sample Name</label>
+                <input class="form-control" name="sampleName" value="DIESEL" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">Report Date</label>
+                <input class="form-control" name="reportDate" type="date" value="<%= today %>" />
+              </div>
+            </div>
+
+            <div class="row g-2 mt-1">
+              <div class="col-6">
+                <label class="form-label small text-muted">Specification</label>
+                <input class="form-control" name="specStd" value="IS 1460:2017 (BS-VI)" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">Created By</label>
+                <input class="form-control" name="createdBy" placeholder="Analyst name" />
+              </div>
+            </div>
+
+            <!-- Key Results -->
+            <div class="section-label mt-4">Key Results</div>
+
+            <div class="row g-2 mt-1">
+              <div class="col-6">
+                <label class="form-label small text-muted">Viscosity @ 40°C (cSt)</label>
+                <input class="form-control" name="visc" type="number" step="0.001" value="3.0" />
+                <div class="form-text">Spec: 2.0–4.5 (ASTM D445)</div>
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">Flash Point (PMCC) °C</label>
+                <input class="form-control" name="flash" type="number" step="0.1" value="68" />
+                <div class="form-text">Spec: Min 35 (ASTM D93)</div>
+              </div>
+            </div>
+
+            <div class="row g-2 mt-1">
+              <div class="col-6">
+                <label class="form-label small text-muted">Density @ 15°C (g/cc)</label>
+                <input class="form-control" name="density" type="number" step="0.001" value="0.837" />
+                <div class="form-text">Spec: 0.810–0.845 (ASTM D1298)</div>
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">Water Content (ppm)</label>
+                <input class="form-control" name="water" type="number" step="1" value="80" />
+                <div class="form-text">Spec: Max 200 (ASTM D6304)</div>
+              </div>
+            </div>
+
+            <div class="row g-2 mt-1">
+              <div class="col-6">
+                <label class="form-label small text-muted">Sediments (% m/m)</label>
+                <input class="form-control" name="sed" type="number" step="0.001" value="0.01" />
+                <div class="form-text">Spec: Max 0.05 (ASTM D473)</div>
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">Cetane Index</label>
+                <input class="form-control" name="cetane" type="number" step="0.1" value="50" />
+                <div class="form-text">Spec: Min 46 (ASTM D4737)</div>
+              </div>
+            </div>
+
+            <div class="row g-2 mt-1">
+              <div class="col-6">
+                <label class="form-label small text-muted">Total Sulphur (mg/kg)</label>
+                <input class="form-control" name="sulphur" type="number" step="0.01" value="" placeholder="e.g. 7.5" />
+                <div class="form-text">Spec: Max 10 (ASTM D5453)</div>
+              </div>
+            </div>
+
+            <!-- Distillation -->
+            <div class="section-label mt-4">Distillation (ASTM D86)</div>
+            <div class="small text-muted mb-2">Enter temperatures (°C) at % recovery.</div>
+
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small text-muted">IBP</label>
+                <input class="form-control" name="d_ibp" type="number" value="182" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">5%</label>
+                <input class="form-control" name="d_5" type="number" value="195" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">10%</label>
+                <input class="form-control" name="d_10" type="number" value="209" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">20%</label>
+                <input class="form-control" name="d_20" type="number" value="232" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">30%</label>
+                <input class="form-control" name="d_30" type="number" value="250" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">40%</label>
+                <input class="form-control" name="d_40" type="number" value="266" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">50%</label>
+                <input class="form-control" name="d_50" type="number" value="279" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">60%</label>
+                <input class="form-control" name="d_60" type="number" value="293" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">70%</label>
+                <input class="form-control" name="d_70" type="number" value="307" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">80%</label>
+                <input class="form-control" name="d_80" type="number" value="322" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">90%</label>
+                <input class="form-control" name="d_90" type="number" value="342" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted">95%</label>
+                <input class="form-control" name="d_95" type="number" value="356" />
+              </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mt-4">
+              <button class="btn btn-dark" type="submit">Generate Report</button>
+            </div>
+
+            <div class="small text-muted mt-2">
+              Report No. is auto-assigned on generation. Use browser Print → Save as PDF.
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

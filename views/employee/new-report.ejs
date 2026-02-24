@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('../partials/head') %><title>New Report</title></head>
+<body class="app-bg">
+<%- include('../partials/navbar') %>
+
+<div class="container-xxl py-4">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/employee/dashboard" class="btn btn-sm btn-outline-secondary">← Back</a>
+    <h4 class="fw-bold mb-0">New Test Report</h4>
+    <span class="badge bg-secondary font-monospace">Next No: <%= nextReportNo %></span>
+  </div>
+
+  <% if (error) { %>
+    <div class="alert alert-danger py-2 small"><%= error %></div>
+  <% } %>
+
+  <form method="POST" action="/employee/reports">
+    <div class="card border-0 rounded-4 shadow-sm mb-3">
+      <div class="card-body">
+
+        <!-- ── Basic Details ── -->
+        <div class="section-label mt-1">Basic Details</div>
+
+        <div class="position-relative mt-2">
+          <label class="form-label small text-muted">Customer</label>
+          <input class="form-control" id="customerInput" name="customer"
+                 placeholder="Type to search or add new..." autocomplete="off" required />
+          <ul id="customerSuggestions" class="list-group position-absolute w-100 shadow-sm"
+              style="z-index:999;display:none;max-height:200px;overflow-y:auto"></ul>
+        </div>
+
+        <div class="row g-2 mt-1">
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Sample Name</label>
+            <input class="form-control" name="sampleName" value="DIESEL" />
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Report Date</label>
+            <input class="form-control" name="reportDate" type="date" value="<%= today %>" required />
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Date Received</label>
+            <input class="form-control" name="dateReceived" type="date" value="<%= today %>" />
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Specification</label>
+            <input class="form-control" name="specStd" value="IS 1460:2017 (BS-VI)" />
+          </div>
+        </div>
+
+        <div class="row g-2 mt-1">
+          <div class="col-6 col-md-4">
+            <label class="form-label small text-muted">Sample ID</label>
+            <input class="form-control" name="sampleId" placeholder="e.g. Seal No.-001343" />
+          </div>
+          <div class="col-6 col-md-4">
+            <label class="form-label small text-muted">Packing Condition</label>
+            <input class="form-control" name="packingCondition" placeholder="e.g. Unsealed, 1L Aluminum Bottle" />
+          </div>
+          <div class="col-6 col-md-4">
+            <label class="form-label small text-muted">Tested By</label>
+            <input class="form-control" value="<%= user.name %>" disabled />
+          </div>
+        </div>
+
+        <!-- ── Key Results ── -->
+        <div class="section-label mt-4">Key Results</div>
+
+        <div class="row g-2 mt-1">
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Viscosity @ 40°C (cSt)</label>
+            <input class="form-control" name="visc" type="number" step="any" value="3.0" />
+            <div class="form-text">2.0–4.5 · D445</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Flash Point (PMCC) °C</label>
+            <input class="form-control" name="flash" type="number" step="any" value="68" />
+            <div class="form-text">Min. 35 · D93</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Density @ 15°C (g/cc)</label>
+            <input class="form-control" name="density" type="number" step="any" value="0.837" />
+            <div class="form-text">0.810–0.845 · D1298</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Total Sulphur (mg/kg)</label>
+            <input class="form-control" name="sulphur" type="number" step="any" placeholder="e.g. 7.5" />
+            <div class="form-text">Max. 10 · D5453</div>
+          </div>
+        </div>
+
+        <div class="row g-2 mt-1">
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Cetane Index</label>
+            <input class="form-control" name="cetane" type="number" step="any" value="50" />
+            <div class="form-text">Min. 46 · D4737</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Cetane Number</label>
+            <input class="form-control" name="cetaneNumber" type="number" step="any" placeholder="e.g. 51" />
+            <div class="form-text">Min. 49 · D613</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">FAME Content (% v/v)</label>
+            <input class="form-control" name="fameContent" type="number" step="any" placeholder="e.g. 3.5" />
+            <div class="form-text">Max. 7 · EN 14078</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">CFPP (°C)</label>
+            <input class="form-control" name="cfpp" type="number" step="any" placeholder="e.g. 2" />
+            <div class="form-text">Max. 6 · IP 309</div>
+          </div>
+        </div>
+
+        <!-- ── Distillation ── -->
+        <div class="section-label mt-4">Distillation (ASTM D86) — Temperatures (°C) at % Recovery</div>
+
+        <div class="row g-2 mt-1">
+          <% [
+            ['IBP','d_ibp',210], ['5%','d_5',212], ['10%','d_10',227.5], ['15%','d_15',''],
+            ['20%','d_20',232], ['30%','d_30',250], ['40%','d_40',266], ['50%','d_50',280.9],
+            ['60%','d_60',293], ['70%','d_70',307], ['80%','d_80',322], ['85%','d_85',''],
+            ['90%','d_90',303.5], ['95%','d_95',348.2], ['%(FBP)','d_fbp','']
+          ].forEach(([lbl, nm, def]) => { %>
+          <div class="col-4 col-md-2">
+            <label class="form-label small text-muted"><%= lbl %></label>
+            <input class="form-control" name="<%= nm %>" type="number" step="any"
+                   <% if (def !== '') { %>value="<%= def %>"<% } else { %>placeholder="—"<% } %> />
+          </div>
+          <% }) %>
+        </div>
+
+        <div class="row g-2 mt-1">
+          <div class="col-4 col-md-2">
+            <label class="form-label small text-muted">Recovery %</label>
+            <input class="form-control" name="d_recovery" placeholder="e.g. 97.2" />
+          </div>
+          <div class="col-4 col-md-2">
+            <label class="form-label small text-muted">Dist. Residue (%)</label>
+            <input class="form-control" name="distResidue" placeholder="e.g. 1.5" />
+          </div>
+          <div class="col-4 col-md-2">
+            <label class="form-label small text-muted">Dist. Loss (%)</label>
+            <input class="form-control" name="distLoss" placeholder="e.g. 1.3" />
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button class="btn btn-dark" type="submit" id="submitBtn">Generate &amp; Save Report</button>
+        </div>
+        <div class="small text-muted mt-2">
+          Report No. is auto-assigned. PDF will be emailed to the admin automatically.
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const input = document.getElementById('customerInput');
+const list  = document.getElementById('customerSuggestions');
+let debounce;
+input.addEventListener('input', () => {
+  clearTimeout(debounce);
+  const q = input.value.trim();
+  if (q.length < 1) { list.style.display = 'none'; return; }
+  debounce = setTimeout(async () => {
+    const res   = await fetch(`/api/customers/search?q=${encodeURIComponent(q)}`);
+    const names = await res.json();
+    list.innerHTML = '';
+    if (!names.length) { list.style.display = 'none'; return; }
+    names.forEach(name => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item list-group-item-action py-1 small';
+      li.textContent = name;
+      li.addEventListener('mousedown', () => { input.value = name; list.style.display = 'none'; });
+      list.appendChild(li);
+    });
+    list.style.display = 'block';
+  }, 250);
+});
+document.addEventListener('click', e => { if (!input.contains(e.target)) list.style.display = 'none'; });
+
+document.querySelector('form').addEventListener('submit', () => {
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+});
+</script>
+</body>
+</html>

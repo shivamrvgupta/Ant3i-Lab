@@ -1,0 +1,96 @@
+:root {
+  --ink:  #1a1a1a;
+  --muted: #666;
+  --line: #d9d9d9;
+  --ok:   #1f7a1f;
+  --bad:  #b00020;
+  --warn: #b36b00;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+.app-bg {
+  background: #f5f6f8;
+  color: var(--ink);
+}
+
+.section-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-top: 6px;
+}
+
+/* ── Report meta grid ─────────────────────────────────────────────────────── */
+.meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  min-width: 340px;
+}
+
+@media (max-width: 575px) {
+  .meta-grid { min-width: unset; grid-template-columns: 1fr; }
+}
+
+.meta-box {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.kv span:first-child { color: var(--muted); }
+
+/* ── Status indicators ────────────────────────────────────────────────────── */
+.badge-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--ok);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.dot.bad  { background: var(--bad); }
+.dot.warn { background: var(--warn); }
+
+.status-pass { color: var(--ok);  font-weight: 800; }
+.status-fail { color: var(--bad); font-weight: 800; }
+
+/* ── Chart ────────────────────────────────────────────────────────────────── */
+.chart-wrap {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px;
+}
+
+#distChart {
+  width: 100%;
+  height: 260px;
+  display: block;
+}
+
+/* ── Print / PDF ──────────────────────────────────────────────────────────── */
+@media print {
+  body { background: #fff !important; }
+  .report-card { box-shadow: none !important; border: 0 !important; }
+  .d-print-none { display: none !important; }
+}

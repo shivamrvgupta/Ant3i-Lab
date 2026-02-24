@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('../partials/head') %><title>Dashboard — Employee</title></head>
+<body class="app-bg">
+<%- include('../partials/navbar') %>
+
+<div class="container-xxl py-4">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <h4 class="fw-bold mb-0">Welcome, <%= user.name %></h4>
+    <a href="/employee/reports/new" class="btn btn-dark btn-sm">+ New Report</a>
+  </div>
+
+  <div class="card border-0 rounded-4 shadow-sm">
+    <div class="card-body">
+      <div class="section-label mb-3">My Recent Reports</div>
+      <% if (recentReports.length === 0) { %>
+        <div class="text-muted small">No reports yet. Click <a href="/employee/reports/new">New Report</a> to get started.</div>
+      <% } else { %>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr><th>Report No.</th><th>Customer</th><th>Sample</th><th>Status</th><th>Date</th><th></th></tr>
+          </thead>
+          <tbody>
+            <% recentReports.forEach(r => { %>
+            <tr>
+              <td class="font-monospace small"><%= r.reportNo %></td>
+              <td><%= r.customer %></td>
+              <td><%= r.sampleName %></td>
+              <td>
+                <span class="badge <%= r.overallStatus === 'NORMAL' ? 'bg-success' : 'bg-danger' %>">
+                  <%= r.overallStatus %>
+                </span>
+              </td>
+              <td class="small text-muted"><%= new Date(r.createdAt).toLocaleDateString('en-IN') %></td>
+              <td><a href="/employee/reports/<%= r._id %>" class="btn btn-sm btn-outline-secondary">View</a></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <a href="/employee/reports" class="btn btn-sm btn-outline-dark mt-3">View all my reports →</a>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

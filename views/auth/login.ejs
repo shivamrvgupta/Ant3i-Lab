@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <title>Login — Lab Reports</title>
+</head>
+<body class="app-bg d-flex align-items-center justify-content-center" style="min-height:100vh">
+
+  <div class="card shadow border-0 rounded-4" style="width:100%;max-width:400px">
+    <div class="card-body p-4">
+      <div class="text-center mb-4">
+        <img src="/logo.png" alt="Logo" style="height:56px;width:auto;object-fit:contain;margin-bottom:10px" /><br>
+        <div class="text-muted small">Sign in to continue</div>
+      </div>
+
+      <% if (error) { %>
+        <div class="alert alert-danger py-2 small"><%= error %></div>
+      <% } %>
+
+      <form method="POST" action="/login">
+        <div class="mb-3">
+          <label class="form-label small text-muted">Email</label>
+          <input class="form-control" type="email" name="email" required autofocus placeholder="you@example.com" />
+        </div>
+        <div class="mb-4">
+          <label class="form-label small text-muted">Password</label>
+          <input class="form-control" type="password" name="password" required placeholder="••••••••" />
+        </div>
+        <button class="btn btn-dark w-100" type="submit">Sign In</button>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>
