@@ -1,6 +1,6 @@
 const puppeteer = require('puppeteer');
-const ejs = require('ejs');
-const fs  = require('fs');
+const ejs  = require('ejs');
+const fs   = require('fs');
 const path = require('path');
 
 async function renderReportToPDF(reportData) {
@@ -25,15 +25,24 @@ async function renderReportToPDF(reportData) {
   try {
     const page = await browser.newPage();
 
+    // A4 width at 96 dpi ≈ 794px; give a tall initial height for layout
+    await page.setViewport({ width: 794, height: 1200, deviceScaleFactor: 1 });
+
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
-    // Wait for chart canvas to finish drawing
-    await page.waitForFunction('window.chartDrawn === true', { timeout: 5000 }).catch(() => {});
+    // Wait for all canvas charts to finish drawing
+    await page.waitForFunction('window.chartDrawn === true', { timeout: 8000 }).catch(() => {});
+
+    // Measure the full rendered height — this becomes the single-page height
+    const contentHeight = await page.evaluate(
+      () => document.documentElement.scrollHeight
+    );
 
     const pdfBuffer = await page.pdf({
-      format: 'A4',
+      width:           '210mm',
+      height:          `${contentHeight}px`,   // dynamic → always 1 page
       printBackground: true,
-      margin: { top: '16mm', bottom: '16mm', left: '14mm', right: '14mm' },
+      margin: { top: '8mm', bottom: '8mm', left: '10mm', right: '10mm' },
     });
 
     return pdfBuffer;
