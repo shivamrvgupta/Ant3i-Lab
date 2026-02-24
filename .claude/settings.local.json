@@ -3,7 +3,16 @@
     "allow": [
       "Bash(npm install)",
       "Bash(lsof -ti :2326)",
-      "Bash(npm install morgan winston)"
+      "Bash(npm install morgan winston)",
+      "Bash(ls /Users/shivamsahu/Developer/lab-incoming/*.png)",
+      "Bash(ls /Users/shivamsahu/Developer/lab-incoming/*.jpg)",
+      "Bash(ls /Users/shivamsahu/Developer/lab-incoming/Screenshot*)",
+      "Bash(ls *.png)",
+      "Bash(while read f)",
+      "Bash(do echo \"File: $f\")",
+      "Bash(done)",
+      "Bash(find . -maxdepth 1 -name \"*.png\" -not -path \"./public/*\" -delete)",
+      "Bash(find . -maxdepth 1 -empty -name \"data\" -delete)"
     ]
   }
 }
