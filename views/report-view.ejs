@@ -87,7 +87,29 @@
     @media print {
       body { background:#fff !important; margin:0; padding:0; }
       .d-print-none { display: none !important; }
-      .report-page { padding: 12px 16px; max-width: 100%; }
+      .report-page   { padding: 6px 10px !important; max-width: 100% !important; font-size: 10px !important; }
+      .rpt-header    { padding: 6px 10px !important; margin-bottom: 5px !important; gap: 10px !important; }
+      .rpt-title     { font-size: 13px !important; }
+      .rpt-subtitle  { font-size: 9px !important; margin-bottom: 3px !important; }
+      .info-kv       { font-size: 9px !important; margin-bottom: 1px !important; }
+      .info-kv .lbl  { min-width: 80px !important; }
+      .status-box    { width: 82px !important; padding: 3px 0 !important; font-size: 8.5px !important; }
+      .info-band     { margin-bottom: 5px !important; }
+      .ib-cell       { padding: 3px 6px !important; }
+      .ib-label      { font-size: 8px !important; margin-bottom: 1px !important; }
+      .ib-val        { font-size: 9.5px !important; }
+      .sec-heading   { padding: 3px 6px !important; font-size: 8.5px !important; }
+      .params-table  { font-size: 9px !important; }
+      .params-table th { padding: 2px 4px !important; font-size: 8.5px !important; }
+      .params-table td { padding: 2px 4px !important; }
+      .dist-table th, .dist-table td { padding: 2px 4px !important; font-size: 9px !important; }
+      .dist-wrap     { gap: 6px !important; margin-top: 3px !important; }
+      .diagnosis-box { padding: 5px 8px !important; margin-top: 5px !important; font-size: 9px !important; }
+      .end-of-report { margin: 4px 0 2px !important; font-size: 10px !important; }
+      .signature-row { margin-top: 5px !important; }
+      .sig-block     { font-size: 9px !important; }
+      #distChart     { height: 140px !important; }
+      #viscChart, #flashChart { height: 80px !important; }
     }
     @media (max-width:640px) {
       .info-band { grid-template-columns: 1fr 1fr; }
@@ -105,9 +127,11 @@
     </span>
     <div class="d-flex gap-2">
       <% if (user && user.role === 'admin') { %>
-        <a href="/admin/reports"    class="btn btn-sm btn-outline-light">← All Reports</a>
+        <a href="/admin/reports"                        class="btn btn-sm btn-outline-light">← All Reports</a>
+        <a href="/admin/reports/<%= report._id %>/edit"  class="btn btn-sm btn-outline-warning">Edit</a>
       <% } else { %>
-        <a href="/employee/reports" class="btn btn-sm btn-outline-light">← My Reports</a>
+        <a href="/employee/reports"                        class="btn btn-sm btn-outline-light">← My Reports</a>
+        <a href="/employee/reports/<%= report._id %>/edit" class="btn btn-sm btn-outline-warning">Edit</a>
       <% } %>
       <button onclick="window.print()" class="btn btn-sm btn-outline-light">Print / PDF</button>
     </div>
