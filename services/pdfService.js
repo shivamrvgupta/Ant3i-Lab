@@ -17,32 +17,48 @@ async function renderReportToPDF(reportData) {
     inlineJS,
   });
 
+  // On macOS, puppeteer's bundled Chromium can crash (kern failure 5).
+  // Prefer system Chrome/Chromium when available.
+  const CHROME_PATHS = [
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+  ];
+  const executablePath = process.platform === 'darwin'
+    ? CHROME_PATHS.find(p => fs.existsSync(p))
+    : undefined;
+
   const browser = await puppeteer.launch({
     headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    executablePath,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
   });
 
   try {
     const page = await browser.newPage();
 
-    // A4 width at 96 dpi ≈ 794px; give a tall initial height for layout
+    // Emulate print media BEFORE rendering so @media print CSS is applied
+    // from the start — charts draw at compact print sizes (140px, 80px)
+    await page.emulateMediaType('print');
+
+    // A4 width at 96 dpi ≈ 794px
     await page.setViewport({ width: 794, height: 1200, deviceScaleFactor: 1 });
 
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
-    // Wait for all canvas charts to finish drawing
+    // Wait for all canvas charts to finish drawing at compact sizes
     await page.waitForFunction('window.chartDrawn === true', { timeout: 8000 }).catch(() => {});
 
-    // Measure the full rendered height — this becomes the single-page height
+    // Measure the compact content height — becomes the single-page height
+    // No PDF margins so the full height is available as printable area
     const contentHeight = await page.evaluate(
       () => document.documentElement.scrollHeight
     );
 
     const pdfBuffer = await page.pdf({
       width:           '210mm',
-      height:          `${contentHeight}px`,   // dynamic → always 1 page
+      height:          `${contentHeight}px`,  // always 1 page
       printBackground: true,
-      margin: { top: '8mm', bottom: '8mm', left: '10mm', right: '10mm' },
+      margin:          { top: '0', bottom: '0', left: '0', right: '0' },
     });
 
     return pdfBuffer;

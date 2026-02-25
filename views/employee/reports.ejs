@@ -36,7 +36,10 @@
               </td>
               <td class="text-center"><%= r.failCount %></td>
               <td class="small text-muted"><%= new Date(r.createdAt).toLocaleDateString('en-IN') %></td>
-              <td><a href="/employee/reports/<%= r._id %>" class="btn btn-sm btn-outline-secondary">View</a></td>
+              <td class="d-flex gap-1">
+                <a href="/employee/reports/<%= r._id %>" class="btn btn-sm btn-outline-secondary">View</a>
+                <a href="/employee/reports/<%= r._id %>/edit" class="btn btn-sm btn-outline-warning">Edit</a>
+              </td>
             </tr>
             <% }) %>
           </tbody>

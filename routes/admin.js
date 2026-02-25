@@ -1,8 +1,9 @@
-const express = require('express');
-const User = require('../models/User');
+const express  = require('express');
+const User     = require('../models/User');
 const Customer = require('../models/Customer');
-const Report = require('../models/Report');
+const Report   = require('../models/Report');
 const { verifyJWT, requireRole } = require('../middleware/auth');
+const { buildParams, buildDistPoints, formValsFromReport } = require('../services/reportBuilder');
 
 const router = express.Router();
 router.use(verifyJWT, requireRole('admin'));
@@ -79,6 +80,67 @@ router.get('/reports', async (req, res) => {
     page,
     totalPages: Math.ceil(total / limit),
   });
+});
+
+// GET /admin/reports/:id/edit
+router.get('/reports/:id/edit', async (req, res) => {
+  const report = await Report.findById(req.params.id).lean();
+  if (!report) return res.status(404).render('error', { message: 'Report not found.' });
+  const vals = formValsFromReport(report);
+  res.render('edit-report', {
+    user:      req.user,
+    report,
+    vals,
+    error:     null,
+    backUrl:   `/admin/reports/${report._id}`,
+    submitUrl: `/admin/reports/${report._id}/edit`,
+  });
+});
+
+// POST /admin/reports/:id/edit
+router.post('/reports/:id/edit', async (req, res) => {
+  const b = req.body;
+  try {
+    const customerName = (b.customer || '').trim();
+    if (customerName) {
+      await Customer.findOneAndUpdate(
+        { name: { $regex: `^${customerName}$`, $options: 'i' } },
+        { name: customerName },
+        { upsert: true }
+      );
+    }
+
+    const { params, failCount } = buildParams(b);
+    const distPoints = buildDistPoints(b);
+
+    await Report.findByIdAndUpdate(req.params.id, {
+      customer:         customerName || '—',
+      sampleName:       b.sampleName || 'DIESEL',
+      reportDate:       new Date(b.reportDate),
+      dateReceived:     b.dateReceived ? new Date(b.dateReceived) : new Date(b.reportDate),
+      sampleId:         (b.sampleId || '').trim(),
+      packingCondition: (b.packingCondition || '').trim(),
+      specStd:          b.specStd || 'IS 1460:2017 (BS-VI)',
+      params,
+      distPoints,
+      failCount,
+      overallStatus:    failCount === 0 ? 'NORMAL' : 'NOT OK',
+    });
+
+    res.redirect(`/admin/reports/${req.params.id}`);
+  } catch (err) {
+    console.error(err);
+    const report = await Report.findById(req.params.id).lean();
+    const vals   = formValsFromReport(report || {});
+    res.render('edit-report', {
+      user:      req.user,
+      report,
+      vals,
+      error:     'Failed to update report. Please try again.',
+      backUrl:   `/admin/reports/${req.params.id}`,
+      submitUrl: `/admin/reports/${req.params.id}/edit`,
+    });
+  }
 });
 
 // GET /admin/reports/:id
