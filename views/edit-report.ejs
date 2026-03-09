@@ -87,7 +87,7 @@
           <div class="col-6 col-md-3">
             <label class="form-label small text-muted">Total Sulphur (mg/kg)</label>
             <input class="form-control" name="sulphur" type="number" step="any" value="<%= vals.sulphur !== undefined ? vals.sulphur : '' %>" />
-            <div class="form-text">Max. 10 · D5453</div>
+            <div class="form-text">Max. 10 · ASTM D4294</div>
           </div>
         </div>
 
@@ -100,17 +100,12 @@
           <div class="col-6 col-md-3">
             <label class="form-label small text-muted">Cetane Number</label>
             <input class="form-control" name="cetaneNumber" type="number" step="any" value="<%= vals.cetaneNumber !== undefined ? vals.cetaneNumber : '' %>" />
-            <div class="form-text">Min. 49 · D613</div>
-          </div>
-          <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">FAME Content (% v/v)</label>
-            <input class="form-control" name="fameContent" type="number" step="any" value="<%= vals.fameContent !== undefined ? vals.fameContent : '' %>" />
-            <div class="form-text">Max. 7 · EN 14078</div>
+            <div class="form-text">Min. 51 · D613</div>
           </div>
           <div class="col-6 col-md-3">
             <label class="form-label small text-muted">CFPP (°C)</label>
             <input class="form-control" name="cfpp" type="number" step="any" value="<%= vals.cfpp !== undefined ? vals.cfpp : '' %>" />
-            <div class="form-text">Max. 6 · IP 309</div>
+            <div class="form-text">Max. 6 · ASTM D4731</div>
           </div>
         </div>
 
@@ -119,10 +114,7 @@
 
         <div class="row g-2 mt-1">
           <% [
-            ['IBP','d_ibp'], ['5%','d_5'], ['10%','d_10'], ['15%','d_15'],
-            ['20%','d_20'], ['30%','d_30'], ['40%','d_40'], ['50%','d_50'],
-            ['60%','d_60'], ['70%','d_70'], ['80%','d_80'], ['85%','d_85'],
-            ['90%','d_90'], ['95%','d_95'], ['%(FBP)','d_fbp']
+            ['IBP','d_ibp'], ['10%','d_10'], ['50%','d_50'], ['90%','d_90'], ['95%','d_95'], ['FBP','d_fbp']
           ].forEach(([lbl, nm]) => { %>
           <div class="col-4 col-md-2">
             <label class="form-label small text-muted"><%= lbl %></label>
