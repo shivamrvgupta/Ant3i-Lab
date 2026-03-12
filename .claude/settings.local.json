@@ -12,7 +12,8 @@
       "Bash(do echo \"File: $f\")",
       "Bash(done)",
       "Bash(find . -maxdepth 1 -name \"*.png\" -not -path \"./public/*\" -delete)",
-      "Bash(find . -maxdepth 1 -empty -name \"data\" -delete)"
+      "Bash(find . -maxdepth 1 -empty -name \"data\" -delete)",
+      "Bash(git add:*)"
     ]
   }
 }

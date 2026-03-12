@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Book a Test — ANT 3I Lab</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .test-card { cursor:pointer; transition:border-color .15s,background .15s; }
+    .test-card:hover { border-color:#6b7280 !important; }
+    .test-card.selected { border-color:#1d4ed8 !important; background:#eff6ff; }
+    .price-panel { position:sticky; top:80px; }
+    .slot-badge { font-size:.8rem; padding:3px 8px; border-radius:12px; }
+    .slot-ok   { background:#dcfce7; color:#16a34a; }
+    .slot-warn { background:#fef9c3; color:#b45309; }
+    .slot-full { background:#fee2e2; color:#dc2626; }
+  </style>
+</head>
+<body class="app-bg">
+
+<!-- Simple navbar for public pages -->
+<nav class="navbar navbar-dark bg-dark px-3 py-2">
+  <span class="navbar-brand d-flex align-items-center gap-2">
+    <img src="/logo.png" alt="ANT 3I Lab" style="height:32px;object-fit:contain" />
+    <span class="small text-white-50">Book a Test</span>
+  </span>
+  <a href="/login" class="btn btn-sm btn-outline-light">Staff Login</a>
+</nav>
+
+<div class="container py-4" style="max-width:900px">
+
+  <% if (error) { %>
+    <div class="alert alert-danger py-2 small"><%= error %></div>
+  <% } %>
+
+  <form method="POST" action="/book" id="bookingForm">
+    <div class="row g-4">
+
+      <!-- LEFT COLUMN -->
+      <div class="col-lg-7">
+
+        <!-- Contact Details -->
+        <div class="card border-0 rounded-4 shadow-sm mb-3">
+          <div class="card-body">
+            <div class="section-label mb-3">Your Details</div>
+            <div class="row g-2">
+              <div class="col-12 col-md-6">
+                <label class="form-label small text-muted">Full Name *</label>
+                <input class="form-control" name="name" required placeholder="e.g. Rahul Sharma" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small text-muted">Email *</label>
+                <input class="form-control" name="email" type="email" required placeholder="you@example.com" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small text-muted">Phone *</label>
+                <input class="form-control" name="phone" required placeholder="+91 99999 00000" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small text-muted">Company / Organisation</label>
+                <input class="form-control" name="company" placeholder="Optional" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample Details -->
+        <div class="card border-0 rounded-4 shadow-sm mb-3">
+          <div class="card-body">
+            <div class="section-label mb-3">Sample Details</div>
+            <div class="row g-2">
+              <div class="col-12 col-md-6">
+                <label class="form-label small text-muted">Product / Fuel Type *</label>
+                <select class="form-select" name="fuelType" required>
+                  <% fuelTypes.forEach(ft => { %>
+                  <option value="<%= ft.name %>"><%= ft.name %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small text-muted">Sample Name</label>
+                <input class="form-control" name="sampleName" value="DIESEL" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small text-muted">Sample ID / Seal No.</label>
+                <input class="form-control" name="sampleId" placeholder="e.g. Seal No.-001343" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small text-muted">Packing Condition</label>
+                <input class="form-control" name="packingCondition" placeholder="e.g. Unsealed, 1L Bottle" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preferred Date -->
+        <div class="card border-0 rounded-4 shadow-sm mb-3">
+          <div class="card-body">
+            <div class="section-label mb-3">Preferred Test Date</div>
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+              <input class="form-control" style="max-width:200px" name="preferredDate" type="date"
+                     id="dateInput" min="<%= today %>" value="<%= today %>" required />
+              <span id="slotBadge" class="slot-badge slot-ok">Checking slots…</span>
+            </div>
+            <div class="form-text mt-1">We confirm availability after reviewing your request.</div>
+          </div>
+        </div>
+
+        <!-- Test Selection -->
+        <div class="card border-0 rounded-4 shadow-sm mb-3">
+          <div class="card-body">
+            <div class="section-label mb-3">Select Tests *</div>
+            <div class="d-flex flex-column gap-2">
+              <% tests.forEach(t => { %>
+              <label class="test-card border rounded-3 p-2 d-flex align-items-center gap-3" style="border-color:#e5e7eb">
+                <input type="checkbox" class="form-check-input mt-0 test-check" style="min-width:18px"
+                       name="tests" value="<%= t.code %>"
+                       data-rate="<%= t.rate %>" data-name="<%= t.name %>" />
+                <div class="flex-grow-1">
+                  <div class="fw-semibold small"><%= t.name %></div>
+                  <div class="text-muted" style="font-size:.78rem"><%= t.method %> &nbsp;·&nbsp; <%= t.testingType %></div>
+                </div>
+                <div class="text-end">
+                  <div class="fw-bold small">₹<%= t.rate.toLocaleString('en-IN') %></div>
+                  <div class="text-muted" style="font-size:.72rem">+GST</div>
+                </div>
+              </label>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /left -->
+
+      <!-- RIGHT COLUMN — Price Summary -->
+      <div class="col-lg-5">
+        <div class="price-panel">
+          <div class="card border-0 rounded-4 shadow-sm">
+            <div class="card-body">
+              <div class="section-label mb-3">Price Summary</div>
+
+              <div id="noTests" class="text-muted small">Select tests to see pricing.</div>
+
+              <ul id="selectedList" class="list-unstyled small mb-3" style="display:none"></ul>
+
+              <div id="priceSummary" style="display:none">
+                <hr class="my-2">
+                <div class="d-flex justify-content-between small text-muted">
+                  <span>Subtotal</span>
+                  <span>₹<span id="subtotalVal">0</span></span>
+                </div>
+                <div class="d-flex justify-content-between small text-muted mt-1">
+                  <span>GST (18%)</span>
+                  <span>₹<span id="gstVal">0</span></span>
+                </div>
+                <div class="d-flex justify-content-between fw-bold mt-2">
+                  <span>Total</span>
+                  <span>₹<span id="totalVal">0</span></span>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <button class="btn btn-dark w-100" type="submit" id="submitBtn">
+                  Submit Request
+                </button>
+                <div class="text-muted mt-2" style="font-size:.75rem">
+                  You'll receive an email confirmation after submission. Our team will verify and confirm your slot.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bank Details Info -->
+          <div class="card border-0 rounded-4 shadow-sm mt-3">
+            <div class="card-body small">
+              <div class="section-label mb-2">Payment Info</div>
+              <div class="mb-2 text-muted" style="font-size:.78rem">All rates are exclusive of 18% GST.</div>
+              <table class="w-100" style="font-size:.8rem;border-collapse:collapse">
+                <tr><td class="text-muted py-1" style="width:40%">Account Name</td><td class="fw-semibold">ANT3I TECHNOLOGIES LLP</td></tr>
+                <tr><td class="text-muted py-1">Account No.</td><td class="fw-semibold font-monospace">50200068111814</td></tr>
+                <tr><td class="text-muted py-1">IFSC</td><td class="fw-semibold font-monospace">HDFC0000315</td></tr>
+                <tr><td class="text-muted py-1">UPI ID</td><td class="fw-semibold font-monospace">7517798253@axl</td></tr>
+              </table>
+              <div class="text-center mt-3">
+                <img src="/qrcode.jpeg" alt="UPI QR Code" style="max-width:140px;width:100%;border-radius:8px" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /right -->
+
+    </div><!-- /row -->
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const GST = 0.18;
+
+// ── Test selection & live pricing ────────────────────────────────────────────
+function updatePrice() {
+  const checked = [...document.querySelectorAll('.test-check:checked')];
+  const noTests     = document.getElementById('noTests');
+  const list        = document.getElementById('selectedList');
+  const summary     = document.getElementById('priceSummary');
+
+  if (!checked.length) {
+    noTests.style.display = '';
+    list.style.display    = 'none';
+    summary.style.display = 'none';
+    return;
+  }
+
+  noTests.style.display = 'none';
+  list.style.display    = '';
+  summary.style.display = '';
+
+  let subtotal = 0;
+  list.innerHTML = '';
+  checked.forEach(cb => {
+    const rate = Number(cb.dataset.rate);
+    subtotal += rate;
+    const li = document.createElement('li');
+    li.className = 'd-flex justify-content-between';
+    li.innerHTML = `<span>${cb.dataset.name}</span><span>₹${rate.toLocaleString('en-IN')}</span>`;
+    list.appendChild(li);
+  });
+
+  const gst   = Math.round(subtotal * GST);
+  const total = subtotal + gst;
+  document.getElementById('subtotalVal').textContent = subtotal.toLocaleString('en-IN');
+  document.getElementById('gstVal').textContent      = gst.toLocaleString('en-IN');
+  document.getElementById('totalVal').textContent    = total.toLocaleString('en-IN');
+}
+
+const completeCheck = document.querySelector('.test-check[value="1241"]');
+const otherChecks   = [...document.querySelectorAll('.test-check:not([value="1241"])')];
+
+function applyCompleteRule() {
+  if (completeCheck && completeCheck.checked) {
+    // Uncheck + disable all other tests
+    otherChecks.forEach(cb => {
+      cb.checked = false;
+      cb.disabled = true;
+      cb.closest('.test-card').classList.remove('selected');
+      cb.closest('.test-card').style.opacity = '0.45';
+    });
+  } else {
+    // Re-enable all other tests
+    otherChecks.forEach(cb => {
+      cb.disabled = false;
+      cb.closest('.test-card').style.opacity = '';
+    });
+  }
+}
+
+document.querySelectorAll('.test-check').forEach(cb => {
+  cb.addEventListener('change', () => {
+    // If an individual test is picked, uncheck the complete test
+    if (cb !== completeCheck && cb.checked && completeCheck && completeCheck.checked) {
+      completeCheck.checked = false;
+      completeCheck.closest('.test-card').classList.remove('selected');
+    }
+    cb.closest('.test-card').classList.toggle('selected', cb.checked);
+    applyCompleteRule();
+    updatePrice();
+  });
+});
+applyCompleteRule();
+updatePrice();
+
+// ── Slot availability ────────────────────────────────────────────────────────
+const dateInput = document.getElementById('dateInput');
+const slotBadge = document.getElementById('slotBadge');
+
+async function checkSlots(date) {
+  slotBadge.className = 'slot-badge slot-ok';
+  slotBadge.textContent = 'Checking…';
+  try {
+    const res  = await fetch(`/api/slots?date=${date}`);
+    const data = await res.json();
+    if (data.available === 0) {
+      slotBadge.className = 'slot-badge slot-full';
+      slotBadge.textContent = 'No slots available';
+    } else if (data.available <= 2) {
+      slotBadge.className = 'slot-badge slot-warn';
+      slotBadge.textContent = `${data.available} slot${data.available > 1 ? 's' : ''} left`;
+    } else {
+      slotBadge.className = 'slot-badge slot-ok';
+      slotBadge.textContent = `${data.available} slots available`;
+    }
+  } catch {
+    slotBadge.className = 'slot-badge slot-ok';
+    slotBadge.textContent = 'Slots available';
+  }
+}
+
+dateInput.addEventListener('change', e => checkSlots(e.target.value));
+checkSlots(dateInput.value);
+
+// ── Disable submit on send ───────────────────────────────────────────────────
+document.getElementById('bookingForm').addEventListener('submit', () => {
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+});
+</script>
+</body>
+</html>

@@ -6,8 +6,10 @@ const path = require('path');
 async function renderReportToPDF(reportData) {
   // Read local assets so they can be inlined (Puppeteer has no Express server to fetch from)
   const publicDir = path.join(__dirname, '..', 'public');
-  const inlineCSS = fs.readFileSync(path.join(publicDir, 'styles.css'), 'utf8');
-  const inlineJS  = fs.readFileSync(path.join(publicDir, 'chart.js'),   'utf8');
+  const inlineCSS    = fs.readFileSync(path.join(publicDir, 'styles.css'), 'utf8');
+  const inlineJS     = fs.readFileSync(path.join(publicDir, 'chart.js'),   'utf8');
+  const logoDataUri  = 'data:image/png;base64,'  + fs.readFileSync(path.join(publicDir, 'logo.png')).toString('base64');
+  const stampDataUri = 'data:image/jpeg;base64,' + fs.readFileSync(path.join(publicDir, 'lab-stamp.jpeg')).toString('base64');
 
   const templatePath = path.join(__dirname, '..', 'views', 'report-view.ejs');
   const html = await ejs.renderFile(templatePath, {
@@ -15,6 +17,8 @@ async function renderReportToPDF(reportData) {
     forPDF: true,
     inlineCSS,
     inlineJS,
+    logoDataUri,
+    stampDataUri,
   });
 
   // On macOS, puppeteer's bundled Chromium can crash (kern failure 5).
@@ -67,4 +71,44 @@ async function renderReportToPDF(reportData) {
   }
 }
 
-module.exports = { renderReportToPDF };
+async function renderInvoiceToPDF(request) {
+  const publicDir = path.join(__dirname, '..', 'public');
+  const inlineCSS = fs.readFileSync(path.join(publicDir, 'styles.css'), 'utf8');
+  const qrDataUri    = 'data:image/jpeg;base64,' + fs.readFileSync(path.join(publicDir, 'qrcode.jpeg')).toString('base64');
+  const stampDataUri = 'data:image/jpeg;base64,' + fs.readFileSync(path.join(publicDir, 'lab-stamp.jpeg')).toString('base64');
+
+  const templatePath = path.join(__dirname, '..', 'views', 'invoice.ejs');
+  const html = await ejs.renderFile(templatePath, { request, user: null, inlineCSS, forPDF: true, qrDataUri, stampDataUri });
+
+  const CHROME_PATHS = [
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+  ];
+  const executablePath = process.platform === 'darwin'
+    ? CHROME_PATHS.find(p => fs.existsSync(p))
+    : undefined;
+
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    executablePath,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.emulateMediaType('print');
+    await page.setViewport({ width: 794, height: 1200, deviceScaleFactor: 1 });
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const contentHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+    return await page.pdf({
+      width:           '210mm',
+      height:          `${contentHeight}px`,
+      printBackground: true,
+      margin:          { top: '0', bottom: '0', left: '0', right: '0' },
+    });
+  } finally {
+    await browser.close();
+  }
+}
+
+module.exports = { renderReportToPDF, renderInvoiceToPDF };

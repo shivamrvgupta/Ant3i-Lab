@@ -65,87 +65,72 @@
           </div>
         </div>
 
-        <!-- ── Key Results ── -->
+        <!-- ── Hidden active catalog codes (used by POST to reload correct catalog items) ── -->
+        <% catalogItems.forEach(item => { %>
+        <input type="hidden" name="activeCodes[]" value="<%= item.code %>" />
+        <% }) %>
+
+        <!-- ── Key Results (dynamic from catalog) ── -->
         <div class="section-label mt-4">Key Results</div>
-
         <div class="row g-2 mt-1">
+          <% catalogItems.filter(c => c.code !== '1240' && c.code !== '1241').forEach(item => { %>
+          <% (item.fields || []).filter(f => f.fieldName).forEach(f => { %>
           <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">Viscosity @ 40°C (cSt)</label>
-            <input class="form-control" name="visc" type="number" step="any" value="<%= vals.visc !== undefined ? vals.visc : '' %>" />
-            <div class="form-text">2.0–4.5 · D445</div>
+            <label class="form-label small text-muted">
+              <%= f.label || item.name %><% if (f.unit && f.unit !== '-') { %> (<%= f.unit %>)<% } %>
+            </label>
+            <% if (f.specType === 'text' || f.specType === 'visual') { %>
+              <input class="form-control" name="<%= f.fieldName %>"
+                     value="<%= vals[f.fieldName] !== undefined ? vals[f.fieldName] : (f.specText || '') %>" />
+            <% } else { %>
+              <input class="form-control" name="<%= f.fieldName %>" type="number" step="any"
+                     value="<%= vals[f.fieldName] !== undefined ? vals[f.fieldName] : '' %>" placeholder="—" />
+            <% } %>
+            <div class="form-text">
+              <% if (f.specType === 'min')   { %>Min. <%= f.specMin %>
+              <% } else if (f.specType === 'max')   { %>Max. <%= f.specMax %>
+              <% } else if (f.specType === 'range') { %><%= f.specMin %>–<%= f.specMax %>
+              <% } else if (f.specType === 'text' || f.specType === 'visual') { %><%= f.specText %>
+              <% } %>
+              <% const fMethod = f.method || item.method; if (fMethod) { %> · <%= fMethod %><% } %>
+            </div>
           </div>
-          <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">Flash Point (PMCC) °C</label>
-            <input class="form-control" name="flash" type="number" step="any" value="<%= vals.flash !== undefined ? vals.flash : '' %>" />
-            <div class="form-text">Min. 35 · D93</div>
-          </div>
-          <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">Density @ 15°C (g/cc)</label>
-            <input class="form-control" name="density" type="number" step="any" value="<%= vals.density !== undefined ? vals.density : '' %>" />
-            <div class="form-text">0.810–0.845 · D1298</div>
-          </div>
-          <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">Total Sulphur (mg/kg)</label>
-            <input class="form-control" name="sulphur" type="number" step="any" value="<%= vals.sulphur !== undefined ? vals.sulphur : '' %>" />
-            <div class="form-text">Max. 10 · D5453</div>
-          </div>
-        </div>
-
-        <div class="row g-2 mt-1">
-          <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">Cetane Index</label>
-            <input class="form-control" name="cetane" type="number" step="any" value="<%= vals.cetane !== undefined ? vals.cetane : '' %>" />
-            <div class="form-text">Min. 46 · D4737</div>
-          </div>
-          <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">Cetane Number</label>
-            <input class="form-control" name="cetaneNumber" type="number" step="any" value="<%= vals.cetaneNumber !== undefined ? vals.cetaneNumber : '' %>" />
-            <div class="form-text">Min. 49 · D613</div>
-          </div>
-          <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">FAME Content (% v/v)</label>
-            <input class="form-control" name="fameContent" type="number" step="any" value="<%= vals.fameContent !== undefined ? vals.fameContent : '' %>" />
-            <div class="form-text">Max. 7 · EN 14078</div>
-          </div>
-          <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">CFPP (°C)</label>
-            <input class="form-control" name="cfpp" type="number" step="any" value="<%= vals.cfpp !== undefined ? vals.cfpp : '' %>" />
-            <div class="form-text">Max. 6 · IP 309</div>
-          </div>
+          <% }) %>
+          <% }) %>
         </div>
 
         <!-- ── Distillation ── -->
-        <div class="section-label mt-4">Distillation (ASTM D86) — Temperatures (°C) at % Recovery</div>
-
+        <% if (catalogItems.some(c => c.code === '1240')) { %>
+        <div class="section-label mt-4">Distillation — Temperatures at % Recovery
+          <span class="fw-normal text-muted small ms-1">· ASTM D 1550</span>
+        </div>
         <div class="row g-2 mt-1">
-          <% [
-            ['IBP','d_ibp'], ['5%','d_5'], ['10%','d_10'], ['15%','d_15'],
-            ['20%','d_20'], ['30%','d_30'], ['40%','d_40'], ['50%','d_50'],
-            ['60%','d_60'], ['70%','d_70'], ['80%','d_80'], ['85%','d_85'],
-            ['90%','d_90'], ['95%','d_95'], ['%(FBP)','d_fbp']
-          ].forEach(([lbl, nm]) => { %>
+          <% [['IBP','d_ibp'],['10%','d_10'],['50%','d_50'],['90%','d_90'],['95% (°C)','d_95'],['FBP','d_fbp']].forEach(([lbl,nm]) => { %>
           <div class="col-4 col-md-2">
             <label class="form-label small text-muted"><%= lbl %></label>
             <input class="form-control" name="<%= nm %>" type="number" step="any"
                    value="<%= vals[nm] !== undefined ? vals[nm] : '' %>" placeholder="—" />
           </div>
           <% }) %>
-        </div>
-
-        <div class="row g-2 mt-1">
           <div class="col-4 col-md-2">
             <label class="form-label small text-muted">Recovery %</label>
             <input class="form-control" name="d_recovery" value="<%= vals.d_recovery || '' %>" placeholder="e.g. 97.2" />
           </div>
+        </div>
+        <div class="section-label mt-3" style="font-size:.75rem;text-transform:none;letter-spacing:0">
+          Distillation Summary <span class="fw-normal text-muted ms-1">· ASTM D 86</span>
+        </div>
+        <div class="row g-2 mt-1">
           <div class="col-4 col-md-2">
-            <label class="form-label small text-muted">Dist. Residue (%)</label>
+            <label class="form-label small text-muted">Residue (%)</label>
             <input class="form-control" name="distResidue" value="<%= vals.distResidue || '' %>" placeholder="e.g. 1.5" />
           </div>
           <div class="col-4 col-md-2">
-            <label class="form-label small text-muted">Dist. Loss (%)</label>
+            <label class="form-label small text-muted">Loss (%)</label>
             <input class="form-control" name="distLoss" value="<%= vals.distLoss || '' %>" placeholder="e.g. 1.3" />
           </div>
         </div>
+        <% } %>
 
         <div class="d-flex gap-2 mt-4">
           <button class="btn btn-dark" type="submit" id="submitBtn">Save Changes</button>
