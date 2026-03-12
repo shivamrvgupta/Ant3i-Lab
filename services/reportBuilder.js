@@ -6,7 +6,10 @@ const PARAM_DEFS = [
   { name: 'Flash Point - (PMCC)',                method: 'ASTM D93',   spec: 'Min. 35',         unit: '\u00b0C', rule: { type: 'min',   min: 35              } },
   { name: 'Density at 15\u00b0C',                method: 'ASTM D1298', spec: '0.810 to 0.845',  unit: 'g/cc',  rule: { type: 'range', min: 0.810, max: 0.845 } },
   { name: 'Total Sulphur',                       method: 'ASTM D4294', spec: 'Max. 10',         unit: 'mg/kg', rule: { type: 'max',   max: 10              } },
+  { name: 'Total Sulphur',                       method: 'ASTM D4294', spec: 'Max. 10',         unit: 'mg/kg', rule: { type: 'max',   max: 10              } },
   { name: 'Cetane Index',                        method: 'ASTM D4737', spec: 'Min. 46',         unit: '-',     rule: { type: 'min',   min: 46              } },
+  { name: 'Cetane Number',                       method: 'ASTM D613',  spec: 'Min. 51',         unit: '-',     rule: { type: 'min',   min: 51              } },
+  { name: 'Cold Filter Plugging Point (CFPP)',   method: 'ASTM D4731', spec: 'Max. 6',          unit: '\u00b0C', rule: { type: 'max',   max: 6               } },
   { name: 'Cetane Number',                       method: 'ASTM D613',  spec: 'Min. 51',         unit: '-',     rule: { type: 'min',   min: 51              } },
   { name: 'Cold Filter Plugging Point (CFPP)',   method: 'ASTM D4731', spec: 'Max. 6',          unit: '\u00b0C', rule: { type: 'max',   max: 6               } },
   { name: 'Distillation, 95% Recovery',          method: 'ASTM D86',   spec: 'Max. 360',        unit: '\u00b0C', rule: { type: 'max',   max: 360             } },
@@ -77,7 +80,7 @@ function buildDistPoints(b) {
     { label: '50%',        temp: numVal(b.d_50)   },
     { label: '90%',        temp: numVal(b.d_90)   },
     { label: '95%',        temp: numVal(b.d_95)   },
-    { label: '%(FBP)',     temp: numVal(b.d_fbp)  },
+    { label: 'FBP',        temp: numVal(b.d_fbp)  },
     { label: 'Recovery %', temp: (b.d_recovery || '').trim() || null },
   ];
 }
