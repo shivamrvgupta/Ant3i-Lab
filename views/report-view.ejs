@@ -155,7 +155,7 @@
     <div class="rpt-header">
       <div>
         <div style="margin-bottom:8px">
-          <img src="/logo.png" alt="Logo" style="height:48px;width:auto;object-fit:contain" />
+          <img src="<%= (typeof forPDF !== 'undefined' && forPDF && typeof logoDataUri !== 'undefined') ? logoDataUri : '/logo.png' %>" alt="Logo" style="height:48px;width:auto;object-fit:contain" />
         </div>
         <div class="rpt-title">TEST REPORT</div>
         <div class="rpt-subtitle">Diesel Quality Analysis &nbsp;|&nbsp; <%= report.specStd %></div>
@@ -194,12 +194,13 @@
 
     <!-- TEST PARAMETERS -->
     <%
-      const viscParam  = report.params.find(p => p.name === 'Viscosity @ 40\u00b0C');
-      const flashParam = report.params.find(p => p.name === 'Flash Point - (PMCC)');
+      const viscParam  = report.params.find(p => p.fieldName === 'visc'  || p.name === 'Viscosity @ 40\u00b0C');
+      const flashParam = report.params.find(p => p.fieldName === 'flash' || p.name === 'Flash Point - (PMCC)');
       const viscValue  = (viscParam  && viscParam.value  !== null && viscParam.value  !== undefined) ? viscParam.value  : null;
       const flashValue = (flashParam && flashParam.value !== null && flashParam.value !== undefined) ? flashParam.value : null;
     %>
-    <div style="display:grid;grid-template-columns:1fr 210px;gap:8px;align-items:start">
+    <% const showCharts = viscValue !== null || flashValue !== null; %>
+    <div style="display:grid;grid-template-columns:<%= showCharts ? '1fr 210px' : '1fr' %>;gap:8px;align-items:start">
       <div>
         <div class="sec-heading">Test Parameters</div>
         <table class="params-table">
@@ -227,19 +228,27 @@
           </tbody>
         </table>
       </div>
+      <% if (showCharts) { %>
       <div style="display:flex;flex-direction:column;gap:6px;padding-top:22px">
+        <% if (viscValue !== null) { %>
         <div style="border:1px solid #e5e7eb;border-radius:4px;padding:4px 4px 0">
           <canvas id="viscChart" style="width:100%;height:128px;display:block"></canvas>
           <div style="text-align:center;font-size:9.5px;color:#555;padding:2px 0 3px">Viscosity @ 40°C, cSt</div>
         </div>
+        <% } %>
+        <% if (flashValue !== null) { %>
         <div style="border:1px solid #e5e7eb;border-radius:4px;padding:4px 4px 0">
           <canvas id="flashChart" style="width:100%;height:128px;display:block"></canvas>
           <div style="text-align:center;font-size:9.5px;color:#555;padding:2px 0 3px">Flash Point - (PMCC)</div>
         </div>
+        <% } %>
       </div>
+      <% } %>
     </div>
 
-    <!-- DISTILLATION -->
+    <!-- DISTILLATION (only if data exists) -->
+    <% const hasDistData = (report.distPoints || []).some(dp => dp.temp !== null && dp.temp !== undefined); %>
+    <% if (hasDistData) { %>
     <div class="sec-heading" style="margin-top:12px">Distillation And Graph (ASTM D86)</div>
     <div class="dist-wrap">
       <table class="dist-table">
@@ -260,6 +269,7 @@
         <canvas id="distChart" style="width:100%;height:230px;display:block"></canvas>
       </div>
     </div>
+    <% } %>
 
     <!-- DIAGNOSIS -->
     <div class="diagnosis-box">
@@ -276,7 +286,9 @@
         Generated: <%= new Date(report.createdAt).toLocaleString('en-IN') %><br>
         This report is for internal use. Verify against original lab COA when required.
       </div>
-      <div class="sig-block">
+      <div class="sig-block" style="text-align:center">
+        <img src="<%= (typeof forPDF !== 'undefined' && forPDF && typeof stampDataUri !== 'undefined') ? stampDataUri : '/lab-stamp.jpeg' %>" alt="Authorized Stamp"
+             style="height:90px;width:auto;object-fit:contain;display:block;margin:0 auto 4px" />
         <div class="sig-line"></div>
         <div>Authorized Signatory</div>
       </div>
@@ -291,11 +303,17 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <% if (forPDF && inlineJS) { %><script><%- inlineJS %></script><% } else { %><script src="/chart.js"></script><% } %>
   <script>
+    <% if (hasDistData) { %>
     const distPoints = <%- JSON.stringify(report.distPoints) %>;
     const pts = distPoints.map(dp => [dp.label, dp.temp]);
     drawDistillation(pts);
+    <% } %>
+    <% if (viscValue !== null) { %>
     drawParamGauge('viscChart',  <%- JSON.stringify(viscValue)  %>, '#1a6fc4');
+    <% } %>
+    <% if (flashValue !== null) { %>
     drawParamGauge('flashChart', <%- JSON.stringify(flashValue) %>, '#dc2626');
+    <% } %>
     window.chartDrawn = true;
   </script>
 </body>

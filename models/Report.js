@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const paramSchema = new mongoose.Schema({
+  fieldName:     String,   // form field key — used to pre-fill edit form
   name:          String,
   method:        String,
   spec:          String,

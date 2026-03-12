@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Invoice — <%= request.requestNo %></title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #e5e7eb; font-family: Arial, sans-serif; font-size: 12px; color: #111; }
+    .no-print { padding: 10px; text-align: center; background: #fff; border-bottom: 1px solid #ccc; }
+    .no-print button, .no-print a {
+      display: inline-block; padding: 6px 18px; margin: 0 4px;
+      border: 1px solid #374151; border-radius: 4px; text-decoration: none;
+      font-size: 13px; cursor: pointer; background: #374151; color: #fff;
+    }
+    .no-print a { background: #fff; color: #374151; }
+
+    .inv { background: #fff; max-width: 860px; margin: 20px auto; border: 1.5px solid #111; }
+
+    /* Title bar */
+    .inv-title { text-align: center; font-size: 18px; font-weight: 900; letter-spacing: .1em;
+      border-bottom: 1.5px solid #111; padding: 8px 0; text-transform: uppercase; }
+
+    /* Utility */
+    .b1  { border: 1px solid #999; }
+    .bb  { border-bottom: 1px solid #999; }
+    .br  { border-right:  1px solid #999; }
+    .bt  { border-top:    1px solid #999; }
+    .p8  { padding: 6px 8px; }
+    .p4  { padding: 3px 8px; }
+    .lbl { font-size: 10.5px; color: #555; }
+    .val { font-weight: 600; }
+    .r   { text-align: right; }
+    .c   { text-align: center; }
+
+    /* Two-col grid */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; }
+    .grid2-6 { display: grid; grid-template-columns: 1.4fr 1fr; }
+
+    /* Company + Invoice meta header */
+    .hdr { display: grid; grid-template-columns: 1.4fr 1fr; border-bottom: 1.5px solid #111; }
+    .hdr-left { padding: 10px 12px; border-right: 1px solid #999; }
+    .hdr-right { padding: 10px 12px; }
+    .co-name { font-size: 14px; font-weight: 800; }
+    .co-sub  { font-size: 11px; color: #444; margin-top: 2px; }
+    .meta-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 12px; }
+    .meta-row .k { color: #555; }
+    .meta-row .v { font-weight: 600; }
+
+    /* Consignee + invoice details band */
+    .consignee { display: grid; grid-template-columns: 1.4fr 1fr; border-bottom: 1px solid #999; }
+    .consignee-left  { padding: 8px 10px; border-right: 1px solid #999; }
+    .consignee-right { padding: 8px 10px; }
+    .sec-lbl { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #555; margin-bottom: 4px; }
+
+    /* Items table */
+    table.items { width: 100%; border-collapse: collapse; font-size: 12px; }
+    table.items th { background: #f3f4f6; padding: 6px 8px; border-bottom: 1.5px solid #999;
+      border-right: 1px solid #ccc; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+    table.items th:last-child { border-right: none; }
+    table.items td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; vertical-align: middle; }
+    table.items td:last-child { border-right: none; }
+    table.items .sub-row td { border-bottom: none; background: #fafafa; }
+    table.items .total-row td { font-weight: 700; font-size: 13px; background: #f3f4f6; border-top: 1.5px solid #999; }
+
+    /* Amount in words */
+    .amt-words { border-top: 1px solid #999; padding: 7px 10px; font-size: 11.5px; }
+    .amt-words strong { font-size: 12px; }
+
+    /* Terms + Bank */
+    .terms-bank { display: grid; grid-template-columns: 1.2fr 1fr; border-top: 1.5px solid #111; min-height: 90px; }
+    .terms-col { padding: 8px 10px; border-right: 1px solid #999; }
+    .bank-col  { padding: 8px 10px; }
+    .terms-col ol { padding-left: 16px; font-size: 11px; line-height: 1.7; }
+
+    /* Signature row */
+    .sig-row { display: grid; grid-template-columns: 1fr 1fr; border-top: 1.5px solid #111; min-height: 140px; }
+    .sig-left  { padding: 10px 12px; border-right: 1px solid #999; font-size: 11.5px; color: #555; }
+    .sig-right { padding: 10px 12px; text-align: right; font-size: 11.5px; }
+    .sig-line  { border-top: 1px solid #444; width: 160px; margin: 4px 0 4px auto; }
+
+    @media print {
+      body { background: #fff !important; }
+      .no-print { display: none !important; }
+      .inv { margin: 0; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="no-print">
+  <button onclick="window.print()">Print / Save PDF</button>
+  <a href="javascript:history.back()">← Back</a>
+</div>
+
+<div class="inv">
+  <%
+    function fmtDate(d) {
+      if (!d) return '—';
+      const dt = new Date(d);
+      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return days[dt.getDay()] + ', ' + months[dt.getMonth()] + ' ' + dt.getDate() + ', ' + dt.getFullYear();
+    }
+    function fmtDateShort(d) {
+      if (!d) return '—';
+      const dt = new Date(d);
+      return String(dt.getDate()).padStart(2,'0') + '/' +
+             String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear();
+    }
+    const invoiceNo = 'ANT3I-' + request.requestNo.replace(/\//g, '-');
+    const subtotal  = request.subtotal  || 0;
+    const cgst      = Math.round(subtotal * 0.09);
+    const sgst      = Math.round(subtotal * 0.09);
+    const grandTotal = subtotal + cgst + sgst;
+
+    // Amount in words (Indian numbering)
+    function toWords(n) {
+      if (n === 0) return 'Zero';
+      const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
+                    'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen',
+                    'Seventeen','Eighteen','Nineteen'];
+      const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+      function below100(x) {
+        if (x < 20) return ones[x];
+        return tens[Math.floor(x/10)] + (x%10 ? ' ' + ones[x%10] : '');
+      }
+      function below1000(x) {
+        if (x < 100) return below100(x);
+        return ones[Math.floor(x/100)] + ' Hundred' + (x%100 ? ' ' + below100(x%100) : '');
+      }
+      let result = '';
+      const cr = Math.floor(n / 10000000); n %= 10000000;
+      const lakh = Math.floor(n / 100000); n %= 100000;
+      const thou = Math.floor(n / 1000);   n %= 1000;
+      if (cr)   result += below1000(cr)   + ' Crore ';
+      if (lakh) result += below100(lakh)  + ' Lakh ';
+      if (thou) result += below1000(thou) + ' Thousand ';
+      if (n)    result += below1000(n);
+      return result.trim();
+    }
+    const amtWords = 'INR ' + toWords(grandTotal) + ' Rupees Only';
+  %>
+
+  <!-- TITLE -->
+  <div class="inv-title">Invoice</div>
+
+  <!-- HEADER: Company info | Invoice meta -->
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="co-name">ANT 3I TECHNOLOGIES LLP</div>
+      <div class="co-sub">Diesel &amp; Lubricant Testing Laboratory</div>
+      <div class="co-sub" style="margin-top:4px">Office No. 15, Plot No. 1, Ashok Vatika,</div>
+      <div class="co-sub">Dhrab Village, Mundra, Kachchh — 370 421</div>
+      <div class="co-sub" style="margin-top:4px">GSTIN/UIN: <strong>24ABVFA2591E1ZB</strong></div>
+      <div class="co-sub">Mobile: <strong>+91 99201 43007</strong> &nbsp;|&nbsp; Email: <strong>lab@ant3i.com</strong></div>
+      <div class="co-sub">State Name: <strong>Gujarat</strong> &nbsp;|&nbsp; State Code: <strong>24</strong></div>
+    </div>
+    <div class="hdr-right">
+      <div class="meta-row"><span class="k">Invoice No.</span><span class="v"><%= invoiceNo %></span></div>
+      <div class="meta-row"><span class="k">Request No.</span><span class="v"><%= request.requestNo %></span></div>
+      <div class="meta-row"><span class="k">Invoice Date</span><span class="v"><%= fmtDate(request.createdAt) %></span></div>
+      <div class="meta-row"><span class="k">Test Date</span><span class="v"><%= fmtDateShort(request.preferredDate) %></span></div>
+      <div class="meta-row"><span class="k">Mode of Payment</span><span class="v">Bank Transfer</span></div>
+      <div class="meta-row" style="margin-top:6px">
+        <span></span>
+        <span style="
+          display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;
+          background:<%= request.paymentStatus === 'paid' ? '#dcfce7' : '#fff7ed' %>;
+          color:<%= request.paymentStatus === 'paid' ? '#16a34a' : '#c2410c' %>;
+          border:1.5px solid <%= request.paymentStatus === 'paid' ? '#16a34a' : '#c2410c' %>">
+          <%= request.paymentStatus === 'paid' ? 'PAID' : 'PAYMENT PENDING' %>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONSIGNEE + SAMPLE DETAILS -->
+  <div class="consignee">
+    <div class="consignee-left">
+      <div class="sec-lbl">Consignee (Bill To)</div>
+      <div style="font-weight:700;font-size:13px"><%= request.name %></div>
+      <% if (request.company) { %><div><%= request.company %></div><% } %>
+      <div class="lbl" style="margin-top:4px">Phone: <span class="val"><%= request.phone %></span></div>
+      <div class="lbl">Email: <span class="val"><%= request.email %></span></div>
+    </div>
+    <div class="consignee-right">
+      <div class="sec-lbl">Sample Details</div>
+      <div class="meta-row"><span class="k">Sample</span><span class="v"><%= request.sampleName %></span></div>
+      <div class="meta-row"><span class="k">Fuel Type</span><span class="v"><%= request.fuelType || '—' %></span></div>
+      <% if (request.sampleId) { %>
+      <div class="meta-row"><span class="k">Sample ID</span><span class="v"><%= request.sampleId %></span></div>
+      <% } %>
+      <% if (request.packingCondition) { %>
+      <div class="meta-row"><span class="k">Packing</span><span class="v"><%= request.packingCondition %></span></div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- ITEMS TABLE -->
+  <table class="items">
+    <thead>
+      <tr>
+        <th style="width:4%" class="c">Sr.</th>
+        <th style="width:8%">Code</th>
+        <th>Description of Test</th>
+        <th style="width:18%">Method</th>
+        <th style="width:8%" class="c">SAC</th>
+        <th style="width:5%" class="c">Qty</th>
+        <th style="width:10%" class="r">Rate (₹)</th>
+        <th style="width:12%" class="r">Amount (₹)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% request.selectedTests.forEach((t, i) => { %>
+      <tr>
+        <td class="c"><%= i + 1 %></td>
+        <td style="font-family:monospace"><%= t.code %></td>
+        <td><%= t.name %></td>
+        <td style="color:#555;font-size:11px"><%= t.method || '—' %></td>
+        <td class="c" style="color:#555;font-size:11px">998346</td>
+        <td class="c">1</td>
+        <td class="r"><%= t.rate.toLocaleString('en-IN') %></td>
+        <td class="r"><strong><%= t.rate.toLocaleString('en-IN') %></strong></td>
+      </tr>
+      <% }) %>
+
+      <!-- Subtotal -->
+      <tr class="sub-row">
+        <td colspan="7" class="r" style="padding-right:10px;font-size:11.5px;border-bottom:1px solid #ccc">Subtotal</td>
+        <td class="r" style="border-bottom:1px solid #ccc">₹<%= subtotal.toLocaleString('en-IN') %></td>
+      </tr>
+      <!-- CGST -->
+      <tr class="sub-row">
+        <td colspan="7" class="r" style="padding-right:10px;font-size:11.5px;border-bottom:1px solid #ccc">
+          CGST @ 9%
+        </td>
+        <td class="r" style="border-bottom:1px solid #ccc">₹<%= cgst.toLocaleString('en-IN') %></td>
+      </tr>
+      <!-- SGST -->
+      <tr class="sub-row">
+        <td colspan="7" class="r" style="padding-right:10px;font-size:11.5px;border-bottom:1px solid #ccc">
+          SGST @ 9%
+        </td>
+        <td class="r" style="border-bottom:1px solid #ccc">₹<%= sgst.toLocaleString('en-IN') %></td>
+      </tr>
+      <!-- Grand Total -->
+      <tr class="total-row">
+        <td colspan="6" style="font-size:11px;color:#555">Total</td>
+        <td class="r" style="font-size:11.5px"><%= request.selectedTests.length %> Test(s)</td>
+        <td class="r">₹<%= grandTotal.toLocaleString('en-IN') %></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- AMOUNT IN WORDS -->
+  <div class="amt-words">
+    Amount Chargeable (in words): <strong><%= amtWords %></strong>
+  </div>
+
+  <!-- TERMS + BANK DETAILS -->
+  <div class="terms-bank">
+    <div class="terms-col">
+      <div class="sec-lbl">Terms &amp; Conditions</div>
+      <ol>
+        <li>This invoice is for laboratory testing services rendered as per the booking request.</li>
+        <li>Payment is strictly due before or on the date of sample collection.</li>
+        <li>No claim or complaint shall be entertained after the test report has been issued.</li>
+        <li>GST will be charged extra as applicable.</li>
+      </ol>
+    </div>
+    <div class="bank-col">
+      <div class="sec-lbl">Company's Bank Details</div>
+      <div class="meta-row"><span class="k">Account Name</span><span class="v">ANT3I TECHNOLOGIES LLP</span></div>
+      <div class="meta-row"><span class="k">A/C No.</span><span class="v" style="font-family:monospace">50200068111814</span></div>
+      <div class="meta-row"><span class="k">Bank</span><span class="v">HDFC Bank</span></div>
+      <div class="meta-row"><span class="k">IFSC</span><span class="v" style="font-family:monospace">HDFC0000315</span></div>
+      <div class="meta-row"><span class="k">UPI</span><span class="v" style="font-family:monospace">7517798253@axl</span></div>
+    </div>
+  </div>
+
+  <!-- SIGNATURE ROW -->
+  <div class="sig-row">
+    <div class="sig-left" style="text-align:center">
+      <div style="font-size:11px;color:#555;margin-bottom:6px;font-weight:600">Scan to Pay</div>
+      <img src="<%= (typeof forPDF !== 'undefined' && forPDF && typeof qrDataUri !== 'undefined') ? qrDataUri : '/qrcode.jpeg' %>" style="width:110px;height:110px;object-fit:contain;display:block;margin:0 auto" alt="UPI QR Code" />
+      <div style="font-size:10.5px;color:#888;margin-top:4px">UPI: 7517798253@axl</div>
+    </div>
+    <div class="sig-right">
+      <div style="font-size:11px;color:#555;margin-bottom:4px">For ANT 3I Technologies LLP</div>
+      <img src="<%= (typeof forPDF !== 'undefined' && forPDF && typeof stampDataUri !== 'undefined') ? stampDataUri : '/lab-stamp.jpeg' %>" style="height:80px;width:auto;object-fit:contain;display:block;margin:0 0 6px auto" alt="Stamp" />
+      <div class="sig-line"></div>
+      <div style="font-weight:700;font-size:12px">Authorized Signatory</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="text-align:center;padding:6px;font-size:10.5px;color:#888;border-top:1px solid #e5e7eb">
+    THANKS FOR DOING BUSINESS WITH US
+  </div>
+</div>
+
+</body>
+</html>

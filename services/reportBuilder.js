@@ -1,12 +1,15 @@
 // Shared report-building logic used by both employee and admin routes.
 
 const PARAM_DEFS = [
-  { name: 'Appearance',                          method: 'Visual',     spec: 'Clear & Bright', unit: '-',      rule: { type: 'visual' } },
+  { name: 'Appearance',                          method: 'Visual',     spec: 'Clear & Bright', unit: '-',      rule: { type: 'text' } },
   { name: 'Viscosity @ 40\u00b0C',               method: 'ASTM D445',  spec: '2.0 \u2013 4.5', unit: 'cSt',   rule: { type: 'range', min: 2.0,   max: 4.5   } },
   { name: 'Flash Point - (PMCC)',                method: 'ASTM D93',   spec: 'Min. 35',         unit: '\u00b0C', rule: { type: 'min',   min: 35              } },
   { name: 'Density at 15\u00b0C',                method: 'ASTM D1298', spec: '0.810 to 0.845',  unit: 'g/cc',  rule: { type: 'range', min: 0.810, max: 0.845 } },
   { name: 'Total Sulphur',                       method: 'ASTM D4294', spec: 'Max. 10',         unit: 'mg/kg', rule: { type: 'max',   max: 10              } },
+  { name: 'Total Sulphur',                       method: 'ASTM D4294', spec: 'Max. 10',         unit: 'mg/kg', rule: { type: 'max',   max: 10              } },
   { name: 'Cetane Index',                        method: 'ASTM D4737', spec: 'Min. 46',         unit: '-',     rule: { type: 'min',   min: 46              } },
+  { name: 'Cetane Number',                       method: 'ASTM D613',  spec: 'Min. 51',         unit: '-',     rule: { type: 'min',   min: 51              } },
+  { name: 'Cold Filter Plugging Point (CFPP)',   method: 'ASTM D4731', spec: 'Max. 6',          unit: '\u00b0C', rule: { type: 'max',   max: 6               } },
   { name: 'Cetane Number',                       method: 'ASTM D613',  spec: 'Min. 51',         unit: '-',     rule: { type: 'min',   min: 51              } },
   { name: 'Cold Filter Plugging Point (CFPP)',   method: 'ASTM D4731', spec: 'Max. 6',          unit: '\u00b0C', rule: { type: 'max',   max: 6               } },
   { name: 'Distillation, 95% Recovery',          method: 'ASTM D86',   spec: 'Max. 360',        unit: '\u00b0C', rule: { type: 'max',   max: 360             } },
@@ -15,6 +18,7 @@ const PARAM_DEFS = [
 ];
 
 const FIELD_MAP = {
+  'Appearance':                                'appearance',
   'Viscosity @ 40\u00b0C':                     'visc',
   'Flash Point - (PMCC)':                      'flash',
   'Density at 15\u00b0C':                      'density',
@@ -28,7 +32,8 @@ const FIELD_MAP = {
 };
 
 const DIST_LABEL_TO_FIELD = {
-  'IBP': 'd_ibp', '10%': 'd_10', '50%': 'd_50', '90%': 'd_90', '95%': 'd_95', 'FBP': 'd_fbp', '%(FBP)': 'd_fbp', 'Recovery %': 'd_recovery',
+  'IBP': 'd_ibp', '10%': 'd_10', '50%': 'd_50',
+  '90%': 'd_90', '95%': 'd_95', '%(FBP)': 'd_fbp', 'Recovery %': 'd_recovery',
 };
 
 function numVal(s) {
@@ -93,7 +98,7 @@ function formValsFromReport(report) {
   };
 
   for (const p of (report.params || [])) {
-    const key = FIELD_MAP[p.name];
+    const key = p.fieldName || FIELD_MAP[p.name]; // prefer stored fieldName, fall back to FIELD_MAP
     if (key && p.value !== null && p.value !== undefined && p.value !== 'NA') {
       vals[key] = p.value;
     }
@@ -109,4 +114,80 @@ function formValsFromReport(report) {
   return vals;
 }
 
-module.exports = { PARAM_DEFS, FIELD_MAP, numVal, ruleStatus, buildParams, buildDistPoints, formValsFromReport };
+// ── Dynamic param builder from TestCatalog items ─────────────────────────────
+// catalogItems: array of TestCatalog lean objects that are relevant to this report
+// body: req.body from form submission
+// Skips: code '1240' (distillation, handled separately) and code '1241' (umbrella)
+// Skips any item where the field was not submitted (allows partial reports)
+// fuelTypeSpecs: optional map of fieldName → { specType, specMin, specMax, specText }
+// (from services/fuelTypes.js getFuelType(name).specs)
+function buildParamsFromCatalog(body, catalogItems, fuelTypeSpecs = {}) {
+  const params = [];
+  for (const item of catalogItems) {
+    if (item.code === '1241') continue; // umbrella — fields come from individual tests
+    if (!item.fields || !item.fields.length) continue;
+
+    for (const f of item.fields) {
+      if (!f.fieldName) continue;
+
+      // Fuel-type spec overrides take priority over catalog defaults
+      const override = fuelTypeSpecs[f.fieldName] || {};
+      const specType = override.specType || f.specType || 'none';
+      const specMin  = override.specMin  != null ? override.specMin  : f.specMin;
+      const specMax  = override.specMax  != null ? override.specMax  : f.specMax;
+      const specText = override.specText != null ? override.specText : f.specText;
+
+      const raw  = body[f.fieldName];
+      // Skip fields not rendered in the form (test was not selected)
+      if (raw === undefined) continue;
+      const rule = {
+        type: specType,
+        min:  specMin,
+        max:  specMax,
+      };
+
+      let value, display, numForRule;
+
+      if (specType === 'text' || specType === 'visual') {
+        const rawText = (raw || '').trim() || specText || 'NA';
+        value = rawText; display = rawText; numForRule = null;
+      } else if (specType === 'info' || specType === 'none') {
+        const rawText = (typeof raw === 'string' ? raw.trim() : '');
+        const rawNum  = numVal(raw);
+        value   = rawNum !== null ? rawNum : (rawText || null);
+        display = rawNum !== null ? String(rawNum) : (rawText || 'NA');
+        numForRule = null;
+      } else {
+        const n = numVal(raw);
+        if (n === null && (raw === undefined || raw === '')) continue; // field not submitted
+        value = n; display = n !== null ? String(n) : 'NA'; numForRule = n;
+      }
+
+      // Build spec string
+      let spec = 'NA';
+      if (specType === 'min')                           spec = `Min. ${specMin}`;
+      if (specType === 'max')                           spec = `Max. ${specMax}`;
+      if (specType === 'range')                         spec = `${specMin} \u2013 ${specMax}`;
+      if (specType === 'text' || specType === 'visual') spec = specText || 'NA';
+      if (specType === 'info' || specType === 'none')   spec = 'NA';
+
+      const status = ruleStatus(numForRule, rule);
+      params.push({
+        fieldName:     f.fieldName,
+        name:          f.label || item.name,
+        method:        f.method || item.method,
+        spec,
+        unit:          f.unit || '-',
+        value,
+        display,
+        statusOk:      status.ok,
+        statusDisplay: status.display,
+      });
+    }
+  }
+
+  const failCount = params.filter(p => !p.statusOk).length;
+  return { params, failCount };
+}
+
+module.exports = { PARAM_DEFS, FIELD_MAP, numVal, ruleStatus, buildParams, buildDistPoints, formValsFromReport, buildParamsFromCatalog };
