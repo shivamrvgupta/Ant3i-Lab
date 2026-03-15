@@ -163,11 +163,8 @@ router.post('/reports', async (req, res) => {
   try {
     const customerName = (b.customer || '').trim();
     if (customerName) {
-      await Customer.findOneAndUpdate(
-        { name: { $regex: `^${customerName}$`, $options: 'i' } },
-        { name: customerName },
-        { upsert: true }
-      );
+      const existing = await Customer.findOne({ name: { $regex: `^${customerName}$`, $options: 'i' } });
+      if (!existing) await Customer.create({ name: customerName }).catch(() => {});
     }
 
     // Use catalog-based param builder (load all active tests to match submitted fields)
@@ -222,9 +219,13 @@ router.post('/reports', async (req, res) => {
       .catch(err => console.error('[PDF/Email background error]', err.message));
   } catch (err) {
     console.error(err);
-    const nextReportNo = await peekNextReportNo();
+    const [nextReportNo, catalogItems, fuelTypes] = await Promise.all([
+      peekNextReportNo(),
+      TestCatalog.find({ isActive: true }).sort({ code: 1 }).lean(),
+      FuelType.find({ isActive: true }).sort({ name: 1 }).lean(),
+    ]);
     const today = new Date().toISOString().split('T')[0];
-    res.render('employee/new-report', { user: req.user, nextReportNo, today, error: 'Failed to save report. Please try again.', prefill: null });
+    res.render('employee/new-report', { user: req.user, nextReportNo, today, error: 'Failed to save report. Please try again.', prefill: null, catalogItems, fuelTypes });
   }
 });
 
@@ -290,11 +291,8 @@ router.post('/reports/:id/edit', async (req, res) => {
 
     const customerName = (b.customer || '').trim();
     if (customerName) {
-      await Customer.findOneAndUpdate(
-        { name: { $regex: `^${customerName}$`, $options: 'i' } },
-        { name: customerName },
-        { upsert: true }
-      );
+      const existing = await Customer.findOne({ name: { $regex: `^${customerName}$`, $options: 'i' } });
+      if (!existing) await Customer.create({ name: customerName }).catch(() => {});
     }
 
     const activeCodes  = [].concat(b.activeCodes || []).filter(Boolean);
