@@ -161,9 +161,12 @@ router.post('/book', async (req, res) => {
   }
 });
 
-// GET /book/confirmation/:requestNo
-router.get('/book/confirmation/:requestNo', async (req, res) => {
-  const request = await TestRequest.findOne({ requestNo: req.params.requestNo }).lean();
+// GET /book/confirmation/REQ/YYYY/NNNN
+// Nginx decodes %2F before forwarding, so the requestNo arrives as 3 path segments.
+// Use a wildcard to capture the full path and reconstruct the requestNo.
+router.get('/book/confirmation/*', async (req, res) => {
+  const requestNo = req.params[0];  // e.g. "REQ/2026/0004"
+  const request = await TestRequest.findOne({ requestNo }).lean();
   if (!request) return res.status(404).render('error', { message: 'Request not found.' });
   res.render('booking/confirmation', { request });
 });
