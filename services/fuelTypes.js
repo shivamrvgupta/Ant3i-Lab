@@ -44,6 +44,26 @@ const FUEL_TYPES = [
       cfpp:         { specType: 'none' },
     },
   },
+  {
+    name:        'Fuel Oil',
+    standardRef: 'IS 1593:2026',
+    specs: {
+      visc:         { specType: 'range', specMin: 80,    specMax: 125 },
+      sulphur:      { specType: 'max',   specMax: 35000 },
+      flash:        { specType: 'min',   specMin: 60 },
+    },
+  },
+  {
+    name:        'HIGH SPEED DIESEL',
+    standardRef: 'IS 16861:2026',
+    specs: {
+      density:      { specType: 'max',   specMax: 0.86 },
+      visc:         { specType: 'range', specMin: 2.0,    specMax: 5.0 },
+      sulphur:      { specType: 'max',   specMax: 2000 },
+      cetaneNumber: { specType: 'min',   specMin: 45 },
+      cfpp:         { specType: 'max',   specMax: 6 },
+    },
+  },
 ];
 
 function getFuelType(name) {

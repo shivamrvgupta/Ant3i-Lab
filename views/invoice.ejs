@@ -186,8 +186,7 @@
     </div>
     <div class="consignee-right">
       <div class="sec-lbl">Sample Details</div>
-      <div class="meta-row"><span class="k">Sample</span><span class="v"><%= request.sampleName %></span></div>
-      <div class="meta-row"><span class="k">Fuel Type</span><span class="v"><%= request.fuelType || '—' %></span></div>
+      <div class="meta-row"><span class="k">Fuel / Product Type</span><span class="v"><%= request.fuelType || request.sampleName %></span></div>
       <% if (request.sampleId) { %>
       <div class="meta-row"><span class="k">Sample ID</span><span class="v"><%= request.sampleId %></span></div>
       <% } %>

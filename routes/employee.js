@@ -181,6 +181,7 @@ router.post('/reports', async (req, res) => {
       reportNo,
       customer:         customerName || '—',
       sampleName:       b.sampleName || 'DIESEL',
+      fuelType:         b.fuelType || 'BS-VI Diesel (10 ppm)',
       reportDate:       new Date(b.reportDate),
       dateReceived:     b.dateReceived ? new Date(b.dateReceived) : new Date(b.reportDate),
       sampleId:         (b.sampleId || '').trim(),
@@ -270,12 +271,15 @@ router.get('/reports/:id/edit', async (req, res) => {
       })
     : allCatalog.filter(c => c.code !== '1241');
 
+  const fuelTypes = await FuelType.find({ isActive: true }).sort({ name: 1 }).lean();
+
   const vals = formValsFromReport(report);
   res.render('edit-report', {
     user:         req.user,
     report,
     vals,
     catalogItems,
+    fuelTypes,
     error:        null,
     backUrl:      `/employee/reports/${report._id}`,
     submitUrl:    `/employee/reports/${report._id}/edit`,
@@ -330,12 +334,14 @@ router.post('/reports/:id/edit', async (req, res) => {
           return (item.fields || []).some(f => reportFieldNames.has(f.fieldName));
         })
       : allCatalog.filter(c => c.code !== '1241');
+    const fuelTypes = await FuelType.find({ isActive: true }).sort({ name: 1 }).lean();
     const vals = formValsFromReport(report || {});
     res.render('edit-report', {
       user:         req.user,
       report,
       vals,
       catalogItems,
+      fuelTypes,
       error:        'Failed to update report. Please try again.',
       backUrl:      `/employee/reports/${req.params.id}`,
       submitUrl:    `/employee/reports/${req.params.id}/edit`,

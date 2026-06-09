@@ -52,9 +52,9 @@
           </div>
           <div class="col-6 col-md-3">
             <label class="form-label small text-muted">Fuel / Product Type</label>
-            <select class="form-select" name="fuelType">
+            <select class="form-select" id="newReportFuelTypeSelect" name="fuelType">
               <% fuelTypes.forEach(ft => { %>
-              <option value="<%= ft.name %>"
+              <option value="<%= ft.name %>" data-spec="<%= ft.standardRef %>"
                 <%= (prefill && prefill.fuelType === ft.name) || (!prefill && ft.name === 'BS-VI Diesel (10 ppm)') ? 'selected' : '' %>>
                 <%= ft.name %>
               </option>
@@ -94,7 +94,7 @@
               <input class="form-control" name="<%= f.fieldName %>"
                      type="number" step="any" placeholder="—" />
             <% } %>
-            <div class="form-text">
+            <div class="form-text spec-display" data-fieldname="<%= f.fieldName %>" data-method="<%= f.method || item.method %>">
               <% if (f.specType === 'min')   { %>Min. <%= f.specMin %>
               <% } else if (f.specType === 'max')   { %>Max. <%= f.specMax %>
               <% } else if (f.specType === 'range') { %><%= f.specMin %>–<%= f.specMax %>
@@ -175,6 +175,51 @@ input.addEventListener('input', () => {
   }, 250);
 });
 document.addEventListener('click', e => { if (!input.contains(e.target)) list.style.display = 'none'; });
+
+// Dynamic spec updates for new report
+const fuelTypeSelect = document.getElementById('newReportFuelTypeSelect');
+
+async function updateSpecsForFuelType(fuelTypeName) {
+  if (!fuelTypeName) return;
+
+  try {
+    const res = await fetch(`/api/fuel-type/${encodeURIComponent(fuelTypeName)}`);
+    const data = await res.json();
+    const specsMap = data.specs || {};
+
+    document.querySelectorAll('.spec-display').forEach(elem => {
+      const fieldName = elem.dataset.fieldname;
+      const method = elem.dataset.method;
+      const spec = specsMap[fieldName];
+
+      if (spec) {
+        let specText = '';
+        if (spec.specType === 'min') {
+          specText = `Min. ${spec.specMin}`;
+        } else if (spec.specType === 'max') {
+          specText = `Max. ${spec.specMax}`;
+        } else if (spec.specType === 'range') {
+          specText = `${spec.specMin}–${spec.specMax}`;
+        } else if (spec.specType === 'text' || spec.specType === 'visual') {
+          specText = spec.specText || '';
+        }
+
+        if (method) specText += ` · ${method}`;
+        elem.textContent = specText;
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching fuel type specs:', err);
+  }
+}
+
+if (fuelTypeSelect) {
+  fuelTypeSelect.addEventListener('change', () => {
+    if (fuelTypeSelect.value) {
+      updateSpecsForFuelType(fuelTypeSelect.value);
+    }
+  });
+}
 
 document.querySelector('form').addEventListener('submit', () => {
   const btn = document.getElementById('submitBtn');

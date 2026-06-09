@@ -37,6 +37,18 @@
             <input class="form-control" name="sampleName" value="<%= vals.sampleName || 'DIESEL' %>" />
           </div>
           <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Fuel Type</label>
+            <select class="form-control" id="fuelTypeSelect" name="fuelType">
+              <option value="">— Select Fuel Type —</option>
+              <% fuelTypes.forEach(ft => { %>
+              <option value="<%= ft.name %>" data-spec="<%= ft.standardRef %>"
+                <%= vals.specStd === ft.standardRef ? 'selected' : '' %>>
+                <%= ft.name %>
+              </option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-6 col-md-3">
             <label class="form-label small text-muted">Report Date</label>
             <input class="form-control" name="reportDate" type="date" value="<%= vals.reportDate %>" required />
           </div>
@@ -44,9 +56,12 @@
             <label class="form-label small text-muted">Date Received</label>
             <input class="form-control" name="dateReceived" type="date" value="<%= vals.dateReceived %>" />
           </div>
-          <div class="col-6 col-md-3">
+        </div>
+
+        <div class="row g-2 mt-1">
+          <div class="col-md-3">
             <label class="form-label small text-muted">Specification</label>
-            <input class="form-control" name="specStd" value="<%= vals.specStd || 'IS 1460:2017 (BS-VI)' %>" />
+            <input class="form-control" id="specStdInput" name="specStd" value="<%= vals.specStd || 'IS 1460:2017 (BS-VI)' %>" />
           </div>
         </div>
 
@@ -86,7 +101,7 @@
               <input class="form-control" name="<%= f.fieldName %>" type="number" step="any"
                      value="<%= vals[f.fieldName] !== undefined ? vals[f.fieldName] : '' %>" placeholder="—" />
             <% } %>
-            <div class="form-text">
+            <div class="form-text spec-display" data-fieldname="<%= f.fieldName %>" data-method="<%= f.method || item.method %>">
               <% if (f.specType === 'min')   { %>Min. <%= f.specMin %>
               <% } else if (f.specType === 'max')   { %>Max. <%= f.specMax %>
               <% } else if (f.specType === 'range') { %><%= f.specMin %>–<%= f.specMax %>
@@ -166,6 +181,54 @@ input.addEventListener('input', () => {
   }, 250);
 });
 document.addEventListener('click', e => { if (!input.contains(e.target)) list.style.display = 'none'; });
+
+const fuelTypeSelect = document.getElementById('fuelTypeSelect');
+const specStdInput = document.getElementById('specStdInput');
+
+async function updateSpecsForFuelType(fuelTypeName) {
+  if (!fuelTypeName) return;
+
+  try {
+    const res = await fetch(`/api/fuel-type/${encodeURIComponent(fuelTypeName)}`);
+    const data = await res.json();
+    const specsMap = data.specs || {};
+
+    // Update all spec displays
+    document.querySelectorAll('.spec-display').forEach(elem => {
+      const fieldName = elem.dataset.fieldname;
+      const method = elem.dataset.method;
+      const spec = specsMap[fieldName];
+
+      if (spec) {
+        let specText = '';
+        if (spec.specType === 'min') {
+          specText = `Min. ${spec.specMin}`;
+        } else if (spec.specType === 'max') {
+          specText = `Max. ${spec.specMax}`;
+        } else if (spec.specType === 'range') {
+          specText = `${spec.specMin}–${spec.specMax}`;
+        } else if (spec.specType === 'text' || spec.specType === 'visual') {
+          specText = spec.specText || '';
+        }
+
+        if (method) specText += ` · ${method}`;
+        elem.textContent = specText;
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching fuel type specs:', err);
+  }
+}
+
+fuelTypeSelect.addEventListener('change', () => {
+  const selected = fuelTypeSelect.options[fuelTypeSelect.selectedIndex];
+  if (selected && selected.dataset.spec) {
+    specStdInput.value = selected.dataset.spec;
+  }
+  if (fuelTypeSelect.value) {
+    updateSpecsForFuelType(fuelTypeSelect.value);
+  }
+});
 
 document.querySelector('form').addEventListener('submit', () => {
   const btn = document.getElementById('submitBtn');

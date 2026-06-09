@@ -1,6 +1,7 @@
 const express     = require('express');
 const Customer    = require('../models/Customer');
 const TestRequest = require('../models/TestRequest');
+const FuelType    = require('../models/FuelType');
 const { verifyJWT } = require('../middleware/auth');
 
 const router = express.Router();
@@ -35,6 +36,27 @@ router.get('/slots', async (req, res) => {
   });
 
   res.json({ available: Math.max(0, max - count), total: max, date: dateStr });
+});
+
+// GET /api/fuel-type/:name  (for employee and admin — get fuel type specs)
+router.get('/fuel-type/:name', verifyJWT, async (req, res) => {
+  const ft = await FuelType.findOne({ name: req.params.name }).lean();
+  if (!ft) return res.json({ specs: {} });
+
+  const specsMap = {};
+  if (ft.specs) {
+    ft.specs.forEach(s => {
+      if (s.fieldName) {
+        specsMap[s.fieldName] = {
+          specType: s.specType,
+          specMin: s.specMin,
+          specMax: s.specMax,
+          specText: s.specText,
+        };
+      }
+    });
+  }
+  res.json({ specs: specsMap });
 });
 
 module.exports = router;
