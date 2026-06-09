@@ -284,7 +284,6 @@
     <div class="signature-row">
       <div style="font-size:11px;color:#777">
         Generated: <%= new Date(report.createdAt).toLocaleString('en-IN') %><br>
-        This report is for internal use. Verify against original lab COA when required.
       </div>
       <div class="sig-block" style="text-align:center">
         <img src="<%= (typeof forPDF !== 'undefined' && forPDF && typeof stampDataUri !== 'undefined') ? stampDataUri : '/lab-stamp.jpeg' %>" alt="Authorized Stamp"
