@@ -160,7 +160,7 @@
         <div class="rpt-title">TEST REPORT</div>
         <div class="rpt-subtitle">Diesel Quality Analysis &nbsp;|&nbsp; <%= report.specStd %></div>
         <div class="info-kv"><span class="lbl">Customer</span>     <span class="val">: <%= report.customer %></span></div>
-        <div class="info-kv"><span class="lbl">Sample Name</span>  <span class="val">: <%= report.sampleName %></span></div>
+        <div class="info-kv"><span class="lbl">Fuel / Product Type</span>  <span class="val">: <%= report.fuelType || report.sampleName %></span></div>
         <div class="info-kv"><span class="lbl">Report No.</span>   <span class="val">: <%= report.reportNo %></span></div>
         <div class="info-kv"><span class="lbl">Report Date</span>  <span class="val">: <%= fmt(report.reportDate) %></span></div>
         <div class="info-kv"><span class="lbl">Tested By</span>    <span class="val">: <%= report.createdBy?.name || '—' %></span></div>

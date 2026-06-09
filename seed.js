@@ -52,9 +52,9 @@ async function seed() {
   }
 
   // ── Fuel Types ───────────────────────────────────────────────────────────────
-  const fuelTypeCount = await FuelType.countDocuments();
-  if (fuelTypeCount === 0) {
-    const docs = FUEL_TYPES.map(ft => ({
+  let addedCount = 0;
+  for (const ft of FUEL_TYPES) {
+    const doc = {
       name:        ft.name,
       standardRef: ft.standardRef,
       isActive:    true,
@@ -65,13 +65,20 @@ async function seed() {
         specMax:  s.specMax,
         specText: s.specText || '',
       })),
-    }));
-    await FuelType.insertMany(docs);
-    console.log(`✅ Seeded ${docs.length} fuel types`);
-    docs.forEach(f => console.log(`   ${f.name}  (${f.standardRef})`));
-  } else {
-    console.log(`Fuel types already have ${fuelTypeCount} entries — skipping.`);
+    };
+    const result = await FuelType.updateOne(
+      { name: ft.name },
+      { $set: doc },
+      { upsert: true }
+    );
+    if (result.upsertedId) addedCount++;
   }
+  if (addedCount > 0) {
+    console.log(`✅ Added ${addedCount} new fuel types`);
+  }
+  const allFuelTypes = await FuelType.find().lean();
+  console.log(`Fuel types in database: ${allFuelTypes.length}`);
+  allFuelTypes.forEach(f => console.log(`   ${f.name}  (${f.standardRef})`));
 
   process.exit(0);
 }

@@ -21,6 +21,7 @@ const reportSchema = new mongoose.Schema({
   reportNo:         { type: String, required: true, unique: true },
   customer:         { type: String, required: true },
   sampleName:       { type: String, default: 'DIESEL' },
+  fuelType:         { type: String, default: 'BS-VI Diesel (10 ppm)' },
   reportDate:       { type: Date,   required: true },
   dateReceived:     { type: Date },
   sampleId:         { type: String, default: '' },

@@ -107,12 +107,15 @@ router.get('/reports/:id/edit', async (req, res) => {
       })
     : allCatalog.filter(c => c.code !== '1241');
 
+  const fuelTypes = await FuelType.find({ isActive: true }).sort({ name: 1 }).lean();
+
   const vals = formValsFromReport(report);
   res.render('edit-report', {
     user:         req.user,
     report,
     vals,
     catalogItems,
+    fuelTypes,
     error:        null,
     backUrl:      `/admin/reports/${report._id}`,
     submitUrl:    `/admin/reports/${report._id}/edit`,
@@ -125,19 +128,22 @@ router.post('/reports/:id/edit', async (req, res) => {
   try {
     const customerName = (b.customer || '').trim();
     if (customerName) {
-      await Customer.findOneAndUpdate(
-        { name: { $regex: `^${customerName}$`, $options: 'i' } },
-        { name: customerName },
-        { upsert: true }
-      );
+      const existing = await Customer.findOne({ name: { $regex: `^${customerName}$`, $options: 'i' } });
+      if (!existing) {
+        await Customer.create({ name: customerName }).catch(() => {});
+      }
     }
 
     const activeCodes   = [].concat(b.activeCodes || []).filter(Boolean);
-    const catalogItems  = await TestCatalog.find(
-      activeCodes.length ? { code: { $in: activeCodes } } : { isActive: true }
-    ).sort({ code: 1 }).lean();
+    const [catalogItems, ftDoc] = await Promise.all([
+      TestCatalog.find(
+        activeCodes.length ? { code: { $in: activeCodes } } : { isActive: true }
+      ).sort({ code: 1 }).lean(),
+      FuelType.findOne({ name: b.fuelType }).lean(),
+    ]);
 
-    const { params, failCount } = buildParamsFromCatalog(b, catalogItems);
+    const fuelTypeSpecs = FuelType.toSpecsMap(ftDoc ? ftDoc.specs : []);
+    const { params, failCount } = buildParamsFromCatalog(b, catalogItems, fuelTypeSpecs);
     const distPoints = buildDistPoints(b);
 
     const report = await Report.findById(req.params.id);
@@ -145,11 +151,12 @@ router.post('/reports/:id/edit', async (req, res) => {
 
     report.customer         = customerName || '—';
     report.sampleName       = b.sampleName || 'DIESEL';
+    report.fuelType         = b.fuelType || 'BS-VI Diesel (10 ppm)';
     report.reportDate       = new Date(b.reportDate);
     report.dateReceived     = b.dateReceived ? new Date(b.dateReceived) : new Date(b.reportDate);
     report.sampleId         = (b.sampleId || '').trim();
     report.packingCondition = (b.packingCondition || '').trim();
-    report.specStd          = b.specStd || 'IS 1460:2017 (BS-VI)';
+    report.specStd          = (ftDoc ? ftDoc.standardRef : null) || b.specStd || 'IS 1460:2017 (BS-VI)';
     report.params           = params;
     report.distPoints       = distPoints;
     report.failCount        = failCount;
@@ -170,12 +177,14 @@ router.post('/reports/:id/edit', async (req, res) => {
           return (item.fields || []).some(f => reportFieldNames.has(f.fieldName));
         })
       : allCatalog.filter(c => c.code !== '1241');
+    const fuelTypes = await FuelType.find({ isActive: true }).sort({ name: 1 }).lean();
     const vals = formValsFromReport(report || {});
     res.render('edit-report', {
       user:         req.user,
       report,
       vals,
       catalogItems,
+      fuelTypes,
       error:        'Failed to update report. Please try again.',
       backUrl:      `/admin/reports/${req.params.id}`,
       submitUrl:    `/admin/reports/${req.params.id}/edit`,
@@ -416,6 +425,12 @@ router.post('/fuel-types/:id/toggle', async (req, res) => {
   const ft = await FuelType.findById(req.params.id);
   if (ft) { ft.isActive = !ft.isActive; await ft.save(); }
   res.redirect('/admin/fuel-types');
+});
+
+// Debug endpoint to check fuel types
+router.get('/debug/fuel-types', async (req, res) => {
+  const fuelTypes = await FuelType.find().sort({ name: 1 }).lean();
+  res.json(fuelTypes);
 });
 
 module.exports = router;
