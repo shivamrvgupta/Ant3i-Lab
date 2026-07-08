@@ -125,8 +125,64 @@ async function sendReportToCustomerEmail({ to, name, requestNo, reportNo, pdfBuf
 // ── WhatsApp via Meta Cloud API ───────────────────────────────────────────────
 
 function normalizePhone(phone) {
+  // Remove all non-digit characters (including unicode, spaces, +, -, etc)
   const digits = String(phone).replace(/\D/g, '');
-  return digits.length === 12 && digits.startsWith('91') ? digits : `91${digits.slice(-10)}`;
+
+  console.log('[Phone] Raw input:', { original: phone, cleaned: digits, length: digits.length });
+
+  // Case 1: Already has 91 at start and is 12 digits (e.g., 918850664191)
+  if (digits.length === 12 && digits.startsWith('91')) {
+    console.log('[Phone] Valid: 12 digits starting with 91');
+    return digits;
+  }
+
+  // Case 2: Has 91 but more than 12 digits (take last 12)
+  if (digits.length > 12 && digits.endsWith('91') === false) {
+    const last12 = digits.slice(-12);
+    if (last12.startsWith('91')) {
+      console.log('[Phone] Extracted: Last 12 digits with 91');
+      return last12;
+    }
+  }
+
+  // Case 3: Exactly 10 digits (e.g., 8850664191 or 9137593041) - needs 91 prefix
+  if (digits.length === 10) {
+    const normalized = `91${digits}`;
+    console.log('[Phone] Normalized: 10 digits → added 91 prefix');
+    return normalized;
+  }
+
+  // Case 4: 11 digits with 91 prefix (e.g., 918850664191 entered as 91-8850664191)
+  if (digits.length === 11 && digits.startsWith('91')) {
+    const normalized = digits; // Already has 91 but missing a digit?
+    console.log('[Phone] Warning: 11 digits with 91 prefix - might be invalid');
+    return normalized;
+  }
+
+  // Case 5: 11 digits without 91 prefix (e.g., 18850664191)
+  if (digits.length === 11) {
+    // Take last 10 digits and add 91
+    const normalized = `91${digits.slice(-10)}`;
+    console.log('[Phone] Normalized: 11 digits → took last 10 and added 91');
+    return normalized;
+  }
+
+  // Case 6: Less than 10 digits or invalid
+  if (digits.length < 10) {
+    console.error('[Phone] Invalid: Too short', { digits, length: digits.length });
+    return null;
+  }
+
+  // Case 7: More than 12 digits - take last 10
+  if (digits.length > 12) {
+    const normalized = `91${digits.slice(-10)}`;
+    console.log('[Phone] Normalized: >12 digits → took last 10 and added 91');
+    return normalized;
+  }
+
+  // Fallback
+  console.warn('[Phone] Fallback: Could not normalize', { digits });
+  return `91${digits.slice(-10)}`;
 }
 
 function metaRequest(path, bodyObj) {
@@ -148,12 +204,28 @@ function metaRequest(path, bodyObj) {
       let data = '';
       res.on('data', c => data += c);
       res.on('end', () => {
-        if (res.statusCode >= 400) console.error('[WhatsApp API error]', res.statusCode, data);
-        else console.log('[WhatsApp API]', res.statusCode);
-        resolve(JSON.parse(data));
+        try {
+          const parsed = JSON.parse(data);
+          if (res.statusCode >= 400) {
+            console.error('[WhatsApp API error]', {
+              statusCode: res.statusCode,
+              path,
+              response: parsed,
+            });
+          } else {
+            console.log('[WhatsApp API] Success', { statusCode: res.statusCode, messageId: parsed.messages?.[0]?.id });
+          }
+          resolve(parsed);
+        } catch (e) {
+          console.error('[WhatsApp API parse error]', data);
+          resolve({});
+        }
       });
     });
-    req.on('error', e => { console.error('[WhatsApp API error]', e.message); resolve({}); });
+    req.on('error', e => {
+      console.error('[WhatsApp API error]', { message: e.message, code: e.code });
+      resolve({});
+    });
     req.write(body);
     req.end();
   });
@@ -164,6 +236,11 @@ async function uploadWhatsAppMedia(pdfBuffer, filename) {
   const https   = require('https');
   const token   = process.env.META_WA_TOKEN;
   const phoneId = process.env.META_WA_PHONE_ID;
+
+  if (!token || !phoneId) {
+    console.error('[WhatsApp] Media upload failed: missing credentials');
+    return null;
+  }
 
   const boundary = '----FormBoundary' + Date.now();
   const CRLF     = '\r\n';
@@ -199,12 +276,23 @@ async function uploadWhatsAppMedia(pdfBuffer, filename) {
       res.on('end', () => {
         try {
           const json = JSON.parse(data);
-          if (json.id) resolve(json.id);
-          else { console.error('[WhatsApp upload error]', data); resolve(null); }
-        } catch { resolve(null); }
+          if (json.id) {
+            console.log('[WhatsApp] Media uploaded successfully', { mediaId: json.id });
+            resolve(json.id);
+          } else {
+            console.error('[WhatsApp] Media upload failed', { statusCode: res.statusCode, response: json });
+            resolve(null);
+          }
+        } catch (e) {
+          console.error('[WhatsApp] Media upload parse error', { data });
+          resolve(null);
+        }
       });
     });
-    req.on('error', e => { console.error('[WhatsApp upload error]', e.message); resolve(null); });
+    req.on('error', e => {
+      console.error('[WhatsApp] Media upload network error', { message: e.message, code: e.code });
+      resolve(null);
+    });
     req.write(headerBuf);
     req.write(pdfBuffer);
     req.write(footerBuf);
@@ -216,9 +304,12 @@ async function uploadWhatsAppMedia(pdfBuffer, filename) {
 async function sendWhatsAppTemplate({ phone, templateName, bodyParams, mediaId, filename }) {
   const token   = process.env.META_WA_TOKEN;
   const phoneId = process.env.META_WA_PHONE_ID;
-  
-  console.log('[WhatsApp] Sending template', { phone, templateName, bodyParams, mediaId, token, phoneId });
-  if (!token || !phoneId) return;
+
+  console.log('[WhatsApp] Sending template', { phone, templateName, hasToken: !!token, hasPhoneId: !!phoneId });
+  if (!token || !phoneId) {
+    console.error('[WhatsApp] Missing credentials', { hasToken: !!token, hasPhoneId: !!phoneId });
+    return;
+  }
 
   const to = normalizePhone(phone);
   const components = [];
@@ -317,4 +408,6 @@ module.exports = {
   sendWhatsAppBookingAccepted,
   sendWhatsAppReportReady,
   sendWhatsAppAdminNewBooking,
+  sendWhatsAppTemplate,
+  normalizePhone,
 };

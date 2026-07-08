@@ -42,6 +42,12 @@
           <span><%= request.company %></span>
         </div>
         <% } %>
+        <% if (request.gstNumber) { %>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted">GST Number</span>
+          <span class="font-monospace"><%= request.gstNumber %></span>
+        </div>
+        <% } %>
         <div class="d-flex justify-content-between mb-2">
           <span class="text-muted">Preferred Date</span>
           <span><%= new Date(request.preferredDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) %></span>

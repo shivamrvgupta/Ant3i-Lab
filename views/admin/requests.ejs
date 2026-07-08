@@ -27,6 +27,7 @@
               <th>Phone</th>
               <th>Tests</th>
               <th>Date</th>
+              <th>GST</th>
               <th>Amount</th>
               <th>Status</th>
               <th>Report</th>
@@ -41,6 +42,7 @@
                 <div class="fw-semibold small"><%= r.name %></div>
                 <% if (r.company) { %><div class="text-muted" style="font-size:.75rem"><%= r.company %></div><% } %>
                 <div class="text-muted" style="font-size:.72rem"><%= r.email %></div>
+                <% if (r.gstNumber) { %><div class="text-muted font-monospace" style="font-size:.7rem">GSTIN: <%= r.gstNumber %></div><% } %>
               </td>
               <td class="small text-muted"><%= r.phone %></td>
               <td class="small">
@@ -49,6 +51,7 @@
                 <% }) %>
               </td>
               <td class="small"><%= new Date(r.preferredDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) %></td>
+              <td class="small text-muted">₹<%= r.gstAmount.toLocaleString('en-IN') %></td>
               <td class="small">
                 <div>₹<%= r.totalAmount.toLocaleString('en-IN') %></div>
                 <form method="POST" action="/admin/requests/<%= r._id %>/payment-toggle" style="display:inline">

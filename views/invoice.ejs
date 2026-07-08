@@ -183,6 +183,9 @@
       <% if (request.company) { %><div><%= request.company %></div><% } %>
       <div class="lbl" style="margin-top:4px">Phone: <span class="val"><%= request.phone %></span></div>
       <div class="lbl">Email: <span class="val"><%= request.email %></span></div>
+      <% if (request.gstNumber) { %>
+      <div class="lbl">GSTIN: <span class="val"><%= request.gstNumber %></span></div>
+      <% } %>
     </div>
     <div class="consignee-right">
       <div class="sec-lbl">Sample Details</div>

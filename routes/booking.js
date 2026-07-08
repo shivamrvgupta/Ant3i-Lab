@@ -91,6 +91,7 @@ router.post('/book', async (req, res) => {
       email:            (b.email || '').trim().toLowerCase(),
       phone:            (b.phone || '').trim(),
       company:          (b.company || '').trim(),
+      gstNumber:        (b.gstNumber || '').trim().toUpperCase(),
       fuelType:         (b.fuelType || 'BS-VI Diesel (10 ppm)').trim(),
       sampleName:       (b.sampleName || 'DIESEL').trim(),
       sampleId:         (b.sampleId || '').trim(),

@@ -433,4 +433,60 @@ router.get('/debug/fuel-types', async (req, res) => {
   res.json(fuelTypes);
 });
 
+// GET Test WhatsApp page
+router.get('/test/whatsapp', (req, res) => {
+  res.render('admin/test-whatsapp', {
+    user: req.user,
+    phone: null,
+    templateName: null,
+    message: null,
+    error: null,
+    success: null,
+  });
+});
+
+// POST Test WhatsApp endpoint
+router.post('/test/whatsapp', async (req, res) => {
+  const { phone, templateName, params } = req.body;
+  const { sendWhatsAppTemplate } = require('../services/emailService');
+
+  let error = null;
+  let success = null;
+
+  if (!phone) {
+    error = 'Phone number is required';
+  } else if (!templateName) {
+    error = 'Template name is required';
+  } else if (!params || params.trim() === '') {
+    error = 'Parameters are required for the template';
+  } else {
+    try {
+      // Parse pipe-separated parameters
+      const bodyParams = params.split('|').map(p => p.trim());
+
+      console.log('[Test] Sending WhatsApp test message', { phone, templateName, bodyParams });
+
+      await sendWhatsAppTemplate({
+        phone,
+        templateName,
+        bodyParams,
+      });
+
+      success = `✓ Test message sent to ${phone} using template "${templateName}". Check server logs for [WhatsApp] messages.`;
+    } catch (err) {
+      console.error('[Test] WhatsApp error:', err);
+      error = `Failed to send test message: ${err.message}`;
+    }
+  }
+
+  res.render('admin/test-whatsapp', {
+    user: req.user,
+    phone,
+    templateName,
+    params,
+    error,
+    success,
+  });
+});
+
 module.exports = router;
