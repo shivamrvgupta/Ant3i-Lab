@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('../partials/head') %><title>Test WhatsApp — Admin</title></head>
+<body class="app-bg">
+<%- include('../partials/navbar') %>
+
+<div class="container-xxl py-4">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/admin/dashboard" class="btn btn-sm btn-outline-secondary">← Back</a>
+    <h4 class="fw-bold mb-0">Test WhatsApp Integration</h4>
+  </div>
+
+  <% if (error) { %>
+    <div class="alert alert-danger py-2"><%= error %></div>
+  <% } %>
+  <% if (success) { %>
+    <div class="alert alert-success py-2"><%= success %></div>
+  <% } %>
+
+  <div class="card border-0 rounded-4 shadow-sm">
+    <div class="card-body">
+      <form method="POST" action="/admin/test/whatsapp">
+        <div class="mb-3">
+          <label class="form-label small text-muted">Phone Number *</label>
+          <input class="form-control" name="phone" placeholder="e.g. 9137593041 or 919137593041 or +91 9137 593041"
+                 required value="<%= phone || '' %>" />
+          <small class="form-text text-muted">
+            Will automatically format to: 919137593041
+          </small>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small text-muted">Template Name *</label>
+          <select class="form-select" id="templateSelect" name="templateName" required onchange="updateTemplateInfo()">
+            <option value="">— Select Template —</option>
+            <option value="booking_received" data-params="Name, Request No, Date, Total">booking_received (4 params)</option>
+            <option value="booking_accepted_invoice" data-params="Name, Request No, Date">booking_accepted_invoice (3 params)</option>
+            <option value="admin_new_booking" data-params="Request No, Customer Name, Test Count, Date, Total">admin_new_booking (5 params)</option>
+            <option value="report_ready_pdf" data-params="Name, Report No, Request No">report_ready_pdf (3 params)</option>
+          </select>
+          <small class="form-text text-muted" id="paramsInfo">
+            Select a template to see required parameters
+          </small>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small text-muted">Parameters (pipe-separated | for multiple values)</label>
+          <textarea class="form-control" name="params" placeholder="e.g. Rajesh Kumar|REQ/2026/0001|09 Jun 2026|5000"
+                    value="<%= params || '' %>"></textarea>
+          <small class="form-text text-muted" id="sampleData">
+            <strong>Example for booking_received:</strong> John Doe|REQ/2026/0001|09 Jun 2026|5000
+          </small>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-dark" type="submit">Send Test Message</button>
+          <a href="/admin/dashboard" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+
+      <hr class="my-4">
+
+      <div class="alert alert-info small">
+        <strong>How to test:</strong>
+        <ol class="mb-0 mt-2">
+          <li>Enter your phone number (with or without 91)</li>
+          <li>Select a template that exists in Meta Business Manager</li>
+          <li>Click "Send Test Message"</li>
+          <li>Check server logs for <code>[WhatsApp] Sending template</code></li>
+          <li>Look for <code>[WhatsApp API] Success</code> or error details</li>
+        </ol>
+      </div>
+
+      <div class="alert alert-warning small">
+        <strong>Troubleshooting:</strong>
+        <ul class="mb-0 mt-2">
+          <li><strong>statusCode 400:</strong> Template doesn't exist or invalid format</li>
+          <li><strong>statusCode 401:</strong> Token expired - regenerate in Meta Business Manager</li>
+          <li><strong>statusCode 403:</strong> Phone ID invalid or no permission</li>
+          <li><strong>No message received:</strong> Check if recipient has WhatsApp and number is correct</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const templateExamples = {
+  booking_received: {
+    params: 'John Doe|REQ/2026/0001|09 Jun 2026|5000',
+    info: 'booking_received requires: Name | Request No | Date | Total Amount'
+  },
+  booking_accepted_invoice: {
+    params: 'John Doe|REQ/2026/0001|09 Jun 2026',
+    info: 'booking_accepted_invoice requires: Name | Request No | Date'
+  },
+  admin_new_booking: {
+    params: 'REQ/2026/0001|John Doe (XYZ Corp)|3|09 Jun 2026|5000',
+    info: 'admin_new_booking requires: Request No | Customer Name | Test Count | Date | Total Amount'
+  },
+  report_ready_pdf: {
+    params: 'John Doe|ANT3I/LABS/2026/0032|REQ/2026/0001',
+    info: 'report_ready_pdf requires: Name | Report No | Request No'
+  }
+};
+
+function updateTemplateInfo() {
+  const select = document.getElementById('templateSelect');
+  const template = select.value;
+  const paramsInfo = document.getElementById('paramsInfo');
+  const sampleData = document.getElementById('sampleData');
+  const paramsField = document.querySelector('textarea[name="params"]');
+
+  if (template && templateExamples[template]) {
+    const example = templateExamples[template];
+    paramsInfo.innerHTML = `<strong>${example.info}</strong>`;
+    sampleData.innerHTML = `<strong>Example:</strong> ${example.params}`;
+    paramsField.placeholder = example.params;
+  } else {
+    paramsInfo.textContent = 'Select a template to see required parameters';
+    sampleData.textContent = '';
+  }
+}
+</script>
+</body>
+</html>

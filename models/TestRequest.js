@@ -13,6 +13,7 @@ const testRequestSchema = new mongoose.Schema({
   email:            { type: String, required: true },
   phone:            { type: String, required: true },
   company:          { type: String, default: '' },
+  gstNumber:        { type: String, default: '' },
   sampleName:       { type: String, default: 'DIESEL' },
   sampleId:         { type: String, default: '' },
   packingCondition: { type: String, default: '' },

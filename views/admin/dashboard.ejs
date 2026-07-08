@@ -113,7 +113,7 @@
               <thead class="table-light">
                 <tr>
                   <th>Req No.</th><th>Customer</th><th>Sample</th>
-                  <th>Tests</th><th>Preferred Date</th><th>Amount</th><th>Status</th><th></th>
+                  <th>Tests</th><th>Preferred Date</th><th>GST</th><th>Amount</th><th>Status</th><th></th>
                 </tr>
               </thead>
               <tbody>
@@ -123,10 +123,12 @@
                   <td>
                     <div class="fw-medium"><%= req.name %></div>
                     <% if (req.company) { %><div class="text-muted small"><%= req.company %></div><% } %>
+                    <% if (req.gstNumber) { %><div class="text-muted font-monospace" style="font-size:.7rem">GSTIN: <%= req.gstNumber %></div><% } %>
                   </td>
                   <td class="small"><%= req.sampleName %></td>
                   <td class="small text-muted"><%= req.selectedTests.length %> test(s)</td>
                   <td class="small"><%= new Date(req.preferredDate).toLocaleDateString('en-IN') %></td>
+                  <td class="small text-muted">₹<%= req.gstAmount.toLocaleString('en-IN') %></td>
                   <td class="small fw-medium">₹<%= req.totalAmount.toLocaleString('en-IN') %></td>
                   <td>
                     <span class="badge <%=
