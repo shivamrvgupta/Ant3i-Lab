@@ -110,7 +110,7 @@
     }
     const invoiceNo = 'ANT3I-' + request.requestNo.replace(/\//g, '-');
     const subtotal  = request.subtotal  || 0;
-    const isLocalGst = !!(request.gstNumber && request.gstNumber.trim().startsWith('24'));
+    const isLocalGst = !request.gstNumber || !request.gstNumber.trim() || request.gstNumber.trim().startsWith('24');
     const cgst      = isLocalGst ? Math.round(subtotal * 0.09) : 0;
     const sgst      = isLocalGst ? Math.round(subtotal * 0.09) : 0;
     const igst      = isLocalGst ? 0 : Math.round(subtotal * 0.18);
