@@ -1,0 +1,5 @@
+{"level":"error","message":"Unhandled Rejection","reason":"MongoServerError: Regular expression is invalid: missing closing parenthesis","timestamp":"2026-07-29 12:30:41"}
+{"level":"error","message":"Unhandled Rejection","reason":"MongoServerError: Regular expression is invalid: missing closing parenthesis","timestamp":"2026-07-29 12:31:07"}
+{"level":"error","message":"Unhandled Rejection","reason":"MongoServerError: Regular expression is invalid: unmatched closing parenthesis","timestamp":"2026-07-29 12:31:15"}
+{"level":"error","message":"Unhandled Rejection","reason":"MongoServerError: Regular expression is invalid: missing closing parenthesis","timestamp":"2026-07-30 15:28:18"}
+{"level":"error","message":"Unhandled Rejection","reason":"MongoServerError: Regular expression is invalid: missing closing parenthesis","timestamp":"2026-07-30 15:28:19"}
